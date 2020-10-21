@@ -1,0 +1,150 @@
+\documentclass{article}
+
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry} 
+
+\usepackage[utf8]{inputenc}   % otra alternativa para los caracteres acentuados y la "Ã±"
+\usepackage[           spanish % para poder usar el espaÃ±ol
+                      ,es-tabla % para los captions de las tablas
+                       ]{babel}   
+\decimalpoint %para usar el punto decimal en vez de coma para los nÃºmeros con decimales
+
+%\usepackage{beton}
+%\usepackage[T1]{fontenc}
+
+\usepackage{parskip}
+\usepackage{xcolor}
+
+\usepackage{caption}
+
+\usepackage{enumerate} % paquete para poder personalizar fÃ¡cilmente la apariencia de las listas enumerativas
+
+\usepackage{graphicx} % figuras
+\usepackage{subfigure} % subfiguras
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+
+\definecolor{gris}{RGB}{220,220,220}
+	
+\usepackage{float} % para controlar la situaciÃ³n de los entornos flotantes
+
+\restylefloat{figure}
+\restylefloat{table} 
+\setlength{\parindent}{0mm}
+
+
+\usepackage[bookmarks=true,
+            bookmarksnumbered=false, % true means bookmarks in 
+                                     % left window are numbered
+            bookmarksopen=false,     % true means only level 1
+                                     % are displayed.
+            colorlinks=true,
+            allcolors=blue,
+            urlcolor=blue]{hyperref}
+\definecolor{webblue}{rgb}{0, 0, 0.5}  % less intense blue
+
+
+\title{\Huge Inteligencia de Negocio: Práctica 1 \\ Resolución de problemas
+  de clasificación y análisis experimental\vspace{10mm}}
+
+\author{\huge David Cabezas Berrido \vspace{10mm} \\ 
+  \huge Grupo 2: Viernes \vspace{10mm} \\ \huge dxabezas@correo.ugr.es \vspace{10mm}}
+
+\begin{document}
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introducción}
+
+En esta primera práctica abordaremos el problema de decidir si un
+tumor en una mamografía es benigno o maligno, por lo que deducimos que
+se trata de un problema de clasificación binaria (dos clases: benigno
+y maligno). Disponemos para ello de datos de 961 pacientes, para cada
+uno de ellos se han medido 6 atributos entre cualitativos y
+cuantitativos.
+
+Sobre este problema real, pondremos a prueba los distintos algoritmos
+estudiados en teoría y las herramientas de prácticas. Trataremos de
+mejorar los resultados mediante un procesado básico de los datos y
+probando distintos hiperparámetros en los algoritmos. Finalmente
+compararemos los algoritmos entre sí y discutiremos cuál es el más
+adecuado para el problema.
+
+Para la experimentación usaremos validación cruzada de 5
+particiones. La matriz de confusión se calculará como la suma de las
+matrices de confusión de cada partición, de esta forma la matriz
+resultante tendrá en cuenta cada instancia una sola vez. Como usamos
+validación cruzada, nos ahorramos tener que separar un conjunto de
+test para pruebas y aprovechamos cada instancia tanto para
+entrenamiento como para evaluación.
+
+Empezamos analizando el dataset. Como ya hemos comentado, consta de
+961 instancias y cuenta con 6 atributos: 
+
+\begin{enumerate}
+\item Código \href{https://es.wikipedia.org/wiki/BI-RADS}{BI-RADS}: se
+  trata de un número entero entre 0 y 6 (ambos incluidos) asignado por
+  un radiólogo tras interpretar la mamografía. Un mayor valor
+  significa una mayor probabilidad de malignidad, a excepción del
+  valor 0, que indica que la información de la radiografía es
+  insuficiente. Tendremos que tener esto en cuenta, ya que puede
+  ``confundir'' a algunos algoritmos como el KNN, que interpretaría
+  que un código 0 está más próximo a un código 1 que a un código 4, lo
+  cual no tiene sentido a priori (sin atender a más características).
+
+\item Edad del paciente: entero positivo.
+\item Forma del tumor: nominal, 4 posibles formas distintas (R, O, L,
+  I) y N para indicar que la forma no está definida.
+\item Margen de la masa: nominal, 5 posibles valores (del 1 al 5).
+\item Densidad de la masa: entero entre 1 y 4 (ambos inclusive), un
+  menor valor indica mayor densidad.
+\item Severidad: variable objetivo a predecir, benigno o maligno. 
+\end{enumerate}
+
+Hay algunos datos perdidos en el dataset: \vspace{-5mm}
+\begin{table}[H]
+  \centering
+  \begin{tabular}{c|c}
+    BI-RADS     & 2 \\
+    Age         & 5 \\
+    Shape       & 0 \\
+    Margin      & 48 \\
+    Density     & 76 \\
+    Severity    & 0
+  \end{tabular}
+\end{table}
+\vspace{-8mm} En principio, no hay los suficientes datos perdidos como
+para dejar de considerar alguna variable, pero durante el procesado de
+datos discutiremos si eliminar alguna o cómo imputar los datos
+perdidos.
+
+De los 961 instancias, 445 pertenecen a la clase maligno (46.3\%) y
+516 a benigno (53.7\%). Las clases están bastante balanceadas, lo que
+en genral convierte a la accuracy en una métrica bastante adecuada
+para la bondad de los algoritmos de clasificación. Sin embargo, en este
+problema concreto, parece mucho más grave un falso negativo
+(predecimos benigno y enviamos a un paciente a casa que debería
+empezar a tratarse) que un falso positivo (predecimos maligno y el
+paciente irá a análisis posteriores donde probablemente se percaten
+del error); por lo que puede ser interesante considerar otras métricas
+de evaluación.
+
+\section{Procesado de datos}
+
+\section{Configuración de algoritmos}
+
+\section{Resultados obtenidos}
+
+\section{Análisis de resultados}
+
+\section{Interpretación de resultados}
+
+\section{Contenido adicional}
+
+\section{Bibliografía}
+
+http://faculty.marshall.usc.edu/gareth-james/ISL
+
+\end{document}
