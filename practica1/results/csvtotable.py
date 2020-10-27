@@ -29,18 +29,14 @@ print('\\begin{table}[H]\n\centering\n\caption{}\n\label{tab:}')
 
 # printing the structure of the table
 s = "l"
-for i in range(len(fields)-2): # 3
+for i in range(len(fields)-1):
     s += "r"
 print('\\begin{tabular}{|' + s + '|}')
 print('\\hline')
-fields.pop(8)
-#fields.pop(7)
 print(' & '.join(field for field in fields) + '\\\\ \hline')
 
 #  printing rows 
 for row in rows:
-    row.pop(8)
-    #row.pop(7)
     # parsing each column of a row 
     s = row[0]
 
