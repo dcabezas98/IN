@@ -147,8 +147,11 @@ que otro.
 
 Los algoritmos que pondremosm a prueba son: Árbol de Decisión,
 Naive-Bayes, SVM, Random Forest, KNN y Redes Neuronales. Los
-introduciremos en la sección \ref{resultados}, excepto los que
-configuremos previamente, que los explicaremos en \ref{configuracion}.
+introduciremos en la sección \ref{sec:resultados}, excepto los que
+configuremos previamente, que los explicaremos en
+\ref{sec:configuracion}.
+
+Todos los procesos aleatorios se realizan con la semilla 185.
 
 \section{Procesado de datos}
 
@@ -266,10 +269,13 @@ los modelos. Lo misimo le ocurre a las métricas F1-score y G-measure,
 que son las que se ajustan más a la naturaleza del problema, ya que
 penalizan más los falsos positivos. Esto ocurre para las dos
 estrategias. Aunque la imputación de valores numéricos por la mediana
-ha resultado ligeramente mejor que usando la media, ambas han
-empeorado el desempeño de los algoritmos. Por esto decidimos abandonar
-la idea de imputar valores y mantenemos las instancias con valores
-perdidos eliminadas.
+ha resultado ligeramente mejor que usando la media (es por ellos que
+en las secciones \ref{sec:resultados} y \ref{sec:analisis}
+consideraremos únicamente la imputación de datos numéricos con la
+mediana), ambas han empeorado el desempeño de los algoritmos. Por esto
+decidimos abandonar la idea de imputar valores y mantenemos las
+instancias con valores perdidos eliminadas. Nos quedamos por tanto con
+datos de 825 pacientes.
 
 \subsection{Preprocesado 3: Eliminación de características innecesarias}
 
@@ -491,31 +497,318 @@ Tras este análisis comparativo de los preprocesados, llegamos a este
 anteriores). Éste será el procesamiento sobre el que configuremos los
 modelos.
 
-\section{Configuración de algoritmos} \label{configuracion}
+\section{Configuración de algoritmos} \label{sec:configuracion}
 
-% Statistical learning
-http://faculty.marshall.usc.edu/gareth-james/ISL
+Ajustaremos los hiperparámetros de algunos algoritmos con el fin de
+mejorar su desempeño, probaremos los modelos con distinos
+hiperparámetros sobre los datos del preprocesado 5, que es el que
+hemos elegido como el más adecuado. La excepción está en modelos que
+no se vean afectados por el reescalado, como es el caso de los
+árboles, para los que utilizaremos el preprocesado 4.
 
-\section{Resultados obtenidos} \label{resultados}
+Configuraremos los modelos: Árbol de decisión, Support Vector Machine,
+Random Forest, KNN y Neural Network.
+
+No configuraremos el modelo Dummy por razones obvias, ni Naive-Bayes
+por la poca importancia que se le ha prestado en clase de teoría.
+
+\subsection{Árbol de Decisión}
+
+Los árboles de decisión son modelos eficaces y fáciles de
+interpretar. Partiendo de todos los ejemplos de entrenamiento,
+seleccionan en cada nodo atributos para dividir el conjunto de
+ejemplos de forma que los subconjuntos generados sean lo más ``puros''
+(predomine una clase) posible. Para esto utilizaremos el índice de
+impureza
+\href{https://es.wikipedia.org/wiki/Aprendizaje_basado_en_%C3%A1rboles_de_decisi%C3%B3n#Impureza_de_Gini}{Gini},
+  por lo nos encontramos con un algoritmo CART.
+
+  Los árboles de decisión pueden ser muy complejos y llegar a explicar
+  la muestra de entrenamiento prácticamente a la perfección. Pero esto
+  a su vez provoca que tengan una mayor variabilidad (dependencia de
+  los datos concretos de entrenamiento) y sean propensos al
+  sobreajuste.
+
+  Utilizamos la implementación \texttt{DecisionTreeClassifier} de
+  \textit{sklearn}, y experimentaremos con distintos valores del
+  parámetro \texttt{max\_depth} (profundidad máxima del árbol, por
+  defecto no está limitada), con la esperanza de reducir el
+  sobreajuste y simplificar el modelo. Ya que cuanto menor sea la
+  profundidad, menor será la complejidad del modelo, lo que le permite
+  generalizar mejor lo aprendido durante el entrenamiento (clasificar
+  ejemplos no vistos durante el entrenamiento) a cambio de perder
+  capacidad para explicar la muestra de entrenamiento.
+
+  Probaremos tres valores de este parámetro (3, 6 y 9), y debemos
+  tener en cuenta que, en caso de que no suponga un descenso
+  significativo en el desempeño del modelo, elegiremos el árbol con
+  menor profundidad, ya que será más fácil de interpretar
+  posteriormente. Los resultados obtenidos son:
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de árboles de decisión de distinta profundidad}
+\label{tab:tuning-dt}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+DT-depth3 & 308 & 382 & 43 & 92 & 0.8364 & 0.77 & 0.1012 & 0.8344 & 0.8202 & 0.822\\
+DT-depth6 & 305 & 359 & 66 & 95 & 0.8048 & 0.7625 & 0.1553 & 0.8036 & 0.7912 & 0.7917\\
+DT-depth9 & 298 & 351 & 74 & 102 & 0.7867 & 0.745 & 0.1741 & 0.7854 & 0.772 & 0.7725\\
+\hline
+\end{tabular}
+\end{table}
+
+Tanto en las medias que miden la capacidad general de clasificación de
+los modelos (Acc. y AUC) como en las más adecuadas a la naturaleza del
+problema por su mayor importancia a la clasificación de instancias
+positivas (F1-score y G-measure). El árbol de decisión con 3 nodos de
+profundidad ha obtenido los mejores resultados. Además, es el más
+simple, por lo que nos decantamos por él sin duda.
+
+\subsection{Random Forest}
+
+Random Forest utiliza una técnica llamada bagging (bootstrap
+aggregating), que combina múltiples predictores simples y asigna la
+clase más frecuente entre sus predicciones. Como predictores simples,
+utiliza árboles de decisión para los que sólo considera un subconjunto
+de las características. En la implementación de \textit{sklearn}
+(\texttt{RandomForestClassifier}), el número de estimadores simples es
+regulado por el parámetro \texttt{n\_estimators} (por defecto 100),
+que será el que discutiremos. Utilizar un mayor número de estimadores
+puede aumentar la exactitud de las predicciones, pero supone un
+importante coste computacional. No obstante, en este problema el
+número de datos y de variables es bastante reducido, por lo que el
+cómputo es prácticamente inmediato.
+
+Probamos con varios valores para el parámetro y obtenemos los
+siguientes resultados:
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de Random Forest con distinto número de estimadores}
+\label{tab:tuning-rf}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+RF-estimators50 & 316 & 347 & 78 & 84 & 0.8036 & 0.79 & 0.1835 & 0.8032 & 0.796 & 0.796\\
+RF-estimators100 & 319 & 344 & 81 & 81 & 0.8036 & 0.7975 & 0.1906 & 0.8035 & 0.7975 & 0.7975\\
+RF-estimators150 & 320 & 343 & 82 & 80 & 0.8036 & 0.8 & 0.1929 & 0.8035 & 0.798 & 0.798\\
+RF-estimators200 & 320 & 344 & 81 & 80 & 0.8048 & 0.8 & 0.1906 & 0.8047 & 0.799 & 0.799\\
+\hline
+\end{tabular}
+\end{table}
+
+Al aumentar el número de estimadores, las métricas F1-score,
+G-measure, Acc. y AUC experimentan una subida muy leve, pero
+prácticamente insignificante. Como el coste computacional es bastante
+bajo, probaremos a aumentarlo aún más.
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de Random Forest con distinto número de estimadores}
+\label{tab:tuning-rf}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+RF-estimators400 & 323 & 341 & 84 & 77 & 0.8048 & 0.8075 & 0.1976 & 0.8049 & 0.8005 & 0.8005\\
+RF-estimators600 & 323 & 341 & 84 & 77 & 0.8048 & 0.8075 & 0.1976 & 0.8049 & 0.8005 & 0.8005\\
+RF-estimators800 & 323 & 340 & 85 & 77 & 0.8036 & 0.8075 & 0.2 & 0.8038 & 0.7995 & 0.7995\\
+RF-estimators1000 & 325 & 340 & 85 & 75 & 0.8061 & 0.8125 & 0.2 & 0.8063 & 0.8025 & 0.8025\\
+\hline
+\end{tabular}
+\end{table}
+
+Conseguimos otra leve mejora al llegar a 1000 estimadores. Esta vez el
+tiempo de ejecución ha sido algo más largo (entorno a 10s para 1000
+estimadores), así que no seguiremos aumentando y nos quedamos con
+1000.
+
+\subsection{Support Vector Machine (SVM)}
+
+SVM es un modelo que trata de encontrar el separador lineal que deje
+los datos lo más lejos de la frontera de separación posible. Como los
+datos no acostumbran a ser separables, se utiliza un kernel, en este
+caso
+\href{https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.RBF.html}{RBF}
+(Radial-Basis Function). Intuitivamente, un kernel es una herramienta
+para introducir transformaciones que aumentan la dimensionalidad de
+los datos con la esperanza de que sean linealmente separables en un
+espacio de mayor dimensión. Aun así, los datos podrían seguir siendo
+no separables (si no se utiliza un kernel lo bastante complejo) o
+podría haber datos ruidosos. Es por ello que se introduce un parámetro
+positivo C de regularización (a menor valor de C, mayor es la
+regularización): valores altos de este parámetro llevan a fronteras
+con márgenes ``estrechos'', pero que dejan que pocos datos violen el
+margen o la frontera; y valores bajos de C provocan fronteras con
+margen ``amplio'', pero que permiten que algunos datos violen el
+margen e incluso la frontera (si violan la frontera, serán mal
+clasificados). Este modelo se conoce como
+\href{https://medium.com/@pushkarmandot/what-is-the-significance-of-c-value-in-support-vector-machine-28224e852c5a}{C-Support
+  Vector Classifier}. Se implementa en \textit{sklearn} en
+\texttt{SVC}.
+
+Discutiremos el parámetro \texttt{C}, por defecto 1. Probando varios
+valores (0.1, 0.25, 0.5, 1, 5, 10, 50) sobre los datos del
+preprocesamiento 5 obtenemos los siguientes resultados:
+
+\begin{table}[H]
+\centering
+\caption{C-SVM con distintas regularizaciones}
+\label{tab:tuning-svm}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+SVM-C0.1 & 345 & 331 & 94 & 55 & 0.8194 & 0.8625 & 0.2212 & 0.8207 & 0.8224 & 0.8233\\
+SVM-C0.25 & 344 & 351 & 74 & 56 & 0.8424 & 0.86 & 0.1741 & 0.8429 & 0.8411 & 0.8413\\
+SVM-C0.5 & 338 & 358 & 67 & 62 & 0.8436 & 0.845 & 0.1576 & 0.8437 & 0.8398 & 0.8398\\
+SVM-C1 & 333 & 364 & 61 & 67 & 0.8448 & 0.8325 & 0.1435 & 0.8445 & 0.8388 & 0.8388\\
+SVM-C5 & 333 & 363 & 62 & 67 & 0.8436 & 0.8325 & 0.1459 & 0.8433 & 0.8377 & 0.8378\\
+SVM-C10 & 330 & 363 & 62 & 70 & 0.84 & 0.825 & 0.1459 & 0.8396 & 0.8333 & 0.8334\\
+SVM-C50 & 335 & 355 & 70 & 65 & 0.8364 & 0.8375 & 0.1647 & 0.8364 & 0.8323 & 0.8323\\
+\hline
+\end{tabular}
+\end{table}
+
+Obtenemos la mejor puntucación en las métricas Acc. y AUC para C=1,
+por lo que este valor proporciona el modelo que mejor clasifica de los
+que hemos probado. Sin embargo, en este problema no sólo es importante
+que un modelo clasifique bien los ejemplos, sino que se equivoque lo
+menos posible al clasificar ejemplos positivos. Es por ello que
+seleccionaremos el valor C=0.25, que consigue los valores más altos e
+las métricas F1-score y G-measure, que priorizan los ejemplos
+positivos.
+
+\subsection{KNN}
+
+KNN es un modelo basado en aprendizaje por semejanza. Sitúa las
+muestras en un espacio de dimensión el número de características, y
+para un ejemplo predice la clase predominante entre sus K vecinos más
+cercanos. El valor de K ejerce de parámetro regularizador, como se
+aprecia en la figura \ref{fig:knn}, extraída del libro
+\href{http://faculty.marshall.usc.edu/gareth-james/ISL}{http://faculty.marshall.usc.edu/gareth-james/ISL}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=90mm]{figures/knn100}
+  \caption{Papel de K en la regularización de KNN}
+  \label{fig:knn}
+\end{figure}
+
+Podemos observar que un mayor valor de K da lugar a una frontera más
+simple, lo que reduce el sobreajuste con el riesgo de que el algoritmo
+no sea capaz de ajustarse a los datos de entrenamiento.
+
+Utilizaremos \texttt{KNeighborsClassifier} de \textit{sklearn}, y
+probaremos distintos valores (1, 3, 5, 15, 25) para el número de
+vecinos más cercanos a considerar (todos impares para evitar empates),
+el parámetro \texttt{n\_neighbors} (por defecto 5). Obtenemos los
+siguientes resultados: 
+
+\begin{table}[H]
+\centering
+\caption{Resultados de KNN con distintos valores de K}
+\label{tab:knn-tuning}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+1-NN & 307 & 331 & 94 & 93 & 0.7733 & 0.7675 & 0.2212 & 0.7732 & 0.7665 & 0.7665\\
+3-NN & 327 & 345 & 80 & 73 & 0.8145 & 0.8175 & 0.1882 & 0.8146 & 0.8104 & 0.8104\\
+5-NN & 324 & 350 & 75 & 76 & 0.817 & 0.81 & 0.1765 & 0.8168 & 0.811 & 0.811\\
+15-NN & 328 & 356 & 69 & 72 & 0.8291 & 0.82 & 0.1624 & 0.8288 & 0.8231 & 0.8231\\
+25-NN & 325 & 350 & 75 & 75 & 0.8182 & 0.8125 & 0.1765 & 0.818 & 0.8125 & 0.8125\\
+\hline
+\end{tabular}
+\end{table}
+
+Para K=1 obtiene los peores resultados en todas las métricas, esto
+probablemente de deba al sobreajuste. Por ejemplo, cualquier dato mal
+etiquetado puede provocar que el algoritmo clasifique mal los ejemplos
+que caigan en un entorno suyo. Es mucho más difícil que haya 2 o más
+datos mal etiquetados cercanos, por lo que el resto de valores de K
+obtienen mejores resultados. Los demás valores de K obtienen
+resultados similares, pero tomamos K=15, que es el que mejor
+puntuación obtiene en las cuatro métricas que consideramos.
+
+\subsection{Red Neuronal}
+
+El último algoritmo que configuramos es la Red Neuronal o Perceptrón
+Multicapa. El modelo de Red Neuronal está formado por varias capas,
+cada una con varias neuronas, en cada neurona se reciben como entrada
+la salida de las neuonas de la capa anterior ponderadas con unos pesos
+(que se van entrenando) y se les aplica una función de activación (en
+nuestro caso una función \emph{relu}: $f(x)=\max(0,x)$), hasta llegar
+a la capa de salida, que devuelve la predicción. Se puede configurar
+el número de capas (por defecto: capa de entrada, una capa oculta con
+100 neuronas y capa de salida) y el número de neuronas de cada capa,
+pero probaremos otra cosa diferente.
+
+Las Redes Neuronales son modelos con gran potencia explicativa, por lo
+que tienden al sobreajuste. Probaremos una técnica de regularización
+llamada \emph{early stopping}, que aparta una fracción de los datos
+(10\% en nuestro caso) para obtener un score de validación. El error
+en la muestra de entrenamiento casi seguramente ira a cero, y se
+provocará sobreajuste. Esta técnica detiene el entrenamiento cuando el
+score de validación no mejora durante un número de iteraciones (10 en
+nuestro caso), y ayuda a reducir el sobreajuste. El problema que
+podemos tener es nuestro reducido número de datos, no estamos
+utilizando una parte de ellos para el entrenamiendo, y puede que el
+modelo no aprenda debidamente debido al escaso número de datos. Es por
+esto que por defecto no se utiliza esta técnica.
+
+Probamos la implementación de \texttt{MLPClassifier} de
+\textit{sklearn} con y sin \texttt{early\_stopping} (también
+seleccionamos \texttt{max\_iter=500} porque recibimos un warning de
+convergencia). Obtenemos:
+
+\begin{table}[H]
+\centering
+\caption{Red Neuronal con y sin \emph{early stopping}}
+\label{tab:mlp-tuning}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+RRNN & 333 & 355 & 70 & 67 & 0.8339 & 0.8325 & 0.1647 & 0.8339 & 0.8294 & 0.8294\\
+RRNNearly-stopping & 356 & 291 & 134 & 44 & 0.7842 & 0.89 & 0.3153 & 0.7874 & 0.8 & 0.8041\\
+\hline
+\end{tabular}
+\end{table}
+
+Observamos que aplicar esta técnica ha mejorado los aciertos sobre las
+instancias positivas, pero al coste de empeorar mucho la clasificación
+de instancias negativas. Llega a tener peor F1-score y G-measure, y
+mucho peor Acc. y AUC. Es por ello que abandonamos la idea de
+\emph{early stopping} y mantenemos la configuración por defecto.
+
+\section{Resultados obtenidos} \label{sec:resultados}
 
 Presentamos los distintos modelos y los resultados obtenidos por cada
 uno.
 
 \section{Análisis de resultados} \label{sec:analisis}
 
-\subsection{Sobre preprocesado básico}
+\subsection{Sobre preprocesado 1}
 
-\subsection{Sobre preprocesado 1 (Imputación de valores perdidos)}
+\subsection{Sobre preprocesado 2}
 
 \section{Interpretación de resultados}
 
 \section{Contenido adicional}
 
+\subsection{Predecir sin BI-RADS}
+
+\subsection{Disposición de los datos}
+
+% en la sección \ref{sec:configuracion} vemos en varios modelos que a
+% mayor regularización sube TP pero baja TN ¿Puede ser que haya mayor
+% densidad de negativos cerca de la frontera? Una frontera mas simple
+% clasifica mejor los positivos, una mas compleja los negativos
+
 \section{Bibliografía/Webgrafía}
 
 http://faculty.marshall.usc.edu/gareth-james/ISL
-% TODO BI-RADS
-% TODO mamographic: BI-RADS no predictiva
+Copiarlas de arriba otra vez
 % Yaser
+
 
 \end{document}
