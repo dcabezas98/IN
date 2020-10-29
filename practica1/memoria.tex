@@ -24,6 +24,18 @@
 \usepackage{amsfonts}
 \usepackage{amsmath}
 
+\usepackage{listings}
+\lstset
+{ %Formatting for code in appendix
+    language=python,
+    basicstyle=\footnotesize,
+    stepnumber=1,
+    showstringspaces=false,
+    tabsize=1,
+    breaklines=true,
+    breakatwhitespace=false,
+}
+
 \definecolor{gris}{RGB}{220,220,220}
 	
 \usepackage{float} % para controlar la situaciÃ³n de los entornos flotantes
@@ -134,7 +146,11 @@ problema concreto, parece mucho más grave un falso negativo
 empezar a tratarse) que un falso positivo (predecimos maligno y el
 paciente irá a análisis posteriores donde probablemente se percaten
 del error); por lo que puede ser interesante considerar otras métricas
-de evaluación.
+de evaluación. También puede ser interesante la métrica
+AUC$=\frac{1+\text{TPR}-\text{FPR}}{2}$ (TPR y FPR se definen en la
+sección \ref{sec:analisis}), que trata de maximizar el acierto en
+ambas clases pero tiene en cuenta si están balanceadas o no (accuracy
+no contempla esto).
 
 En concreto, las métricas F1-score y G-measure, medias armónica y
 geométrica respectivamente de PPV (proporción de correctas entre las
@@ -148,7 +164,7 @@ que otro.
 Los algoritmos que pondremosm a prueba son: Árbol de Decisión,
 Naive-Bayes, SVM, Random Forest, KNN y Redes Neuronales. Los
 introduciremos en la sección \ref{sec:resultados}, excepto los que
-configuremos previamente, que los explicaremos en
+configuremos previamente, que los explicaremos en la
 \ref{sec:configuracion}.
 
 Todos los procesos aleatorios se realizan con la semilla 185.
@@ -267,7 +283,7 @@ observamos que con este preprocesado decrecen levemente las métricas
 Accuracy y AUC (Area Under Curve), que miden la eficiencia general de
 los modelos. Lo misimo le ocurre a las métricas F1-score y G-measure,
 que son las que se ajustan más a la naturaleza del problema, ya que
-penalizan más los falsos positivos. Esto ocurre para las dos
+penalizan más los falsos negativos. Esto ocurre para las dos
 estrategias. Aunque la imputación de valores numéricos por la mediana
 ha resultado ligeramente mejor que usando la media (es por ellos que
 en las secciones \ref{sec:resultados} y \ref{sec:analisis}
@@ -684,8 +700,9 @@ positivos.
 KNN es un modelo basado en aprendizaje por semejanza. Sitúa las
 muestras en un espacio de dimensión el número de características, y
 para un ejemplo predice la clase predominante entre sus K vecinos más
-cercanos. El valor de K ejerce de parámetro regularizador, como se
-aprecia en la figura \ref{fig:knn}, extraída del libro
+cercanos del conjunto de entrenamiento. El valor de K ejerce de
+parámetro regularizador, como se aprecia en la figura \ref{fig:knn},
+extraída del libro
 \href{http://faculty.marshall.usc.edu/gareth-james/ISL}{http://faculty.marshall.usc.edu/gareth-james/ISL}.
 
 \begin{figure}[H]
@@ -782,14 +799,499 @@ mucho peor Acc. y AUC. Es por ello que abandonamos la idea de
 
 \section{Resultados obtenidos} \label{sec:resultados}
 
-Presentamos los distintos modelos y los resultados obtenidos por cada
-uno.
+Presentamos los resultados obtenidos por cada uno. Utilizamos los
+parámetros por defecto de la implementación de \textit{sklearn} salvo
+que se indique lo contrario (para los parámetros que hemos
+configurado).
+
+Para los modelos que configuramos en la sección anterior, no mostramos
+de nuevo una introducción explicando su funcionamiento. Nos limitamos
+a hacerlo para los que no configuramos previamente.
+
+\subsection{\href{https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyClassifier.html}{Dummy classifier}}
+
+Es un clasificador que siempre predice un valor constante:
+maligno. Obviamente nunca da lugar a falsos negativos, por lo que sus
+métricas F1-score y G-measure no son del todo malas. No obstante, es
+más que mejorable, ya que no tiene en cuenta las características de
+los ejemplos a la hora de clasificarlos. Por tanto lo usamos como cota
+inferior: si un algoritmo obtiene peores scores que Dummy, nos
+plantearemos si estamos haciendo algo mal o si ese algoritmo es
+adecuado para el problema.
+
+El código de creación del modelo es:
+\begin{lstlisting}
+  dummy=DummyClassifier(strategy='constant',constant=1)
+\end{lstlisting}
+
+Sus resultados para cada preprocesado son:
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de Dummy sobre los distintos preprocesados}
+\label{tab:dummy}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+  Preproc.1 & 400 & 0 & 425 & 0 & 0.4848 & 1.0 & 1.0 & 0.5 & 0.6531 & 0.6963\\
+  Preproc.2 & 445 & 0 & 516 & 0 & 0.4631 & 1.0 & 1.0 & 0.5 & 0.633 & 0.6805\\
+  Preproc.3 & 400 & 0 & 425 & 0 & 0.4848 & 1.0 & 1.0 & 0.5 & 0.6531 & 0.6963\\
+  Preproc.4 & 400 & 0 & 425 & 0 & 0.4848 & 1.0 & 1.0 & 0.5 & 0.6531 & 0.6963\\
+  Preproc.5 & 400 & 0 & 425 & 0 & 0.4848 & 1.0 & 1.0 & 0.5 & 0.6531 & 0.6963\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{\href{https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html}{Árbol de decisión}}
+
+Como explicamos previamente, limitamos la profundidad del árbol a 3
+nodos. El resto de parámetros son los elegidos por defecto en la
+implementación.
+
+El código de creación del modelo es:
+\begin{lstlisting}
+  dt=tree.DecisionTreeClassifier(max_depth=3,random_state=SEED)
+\end{lstlisting}
+
+Sus resultados para cada preprocesado son:
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de Decision Tree sobre los distintos preprocesados}
+\label{tab:dt}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+  Preproc.1 & 308 & 380 & 45 & 92 & 0.8339 & 0.77 & 0.1059 & 0.8321 & 0.8181 & 0.8197\\
+  Preproc.2 & 337 & 458 & 58 & 108 & 0.8273 & 0.7573 & 0.1124 & 0.8225 & 0.8024 & 0.8038\\
+  Preproc.3 & 309 & 380 & 45 & 91 & 0.8352 & 0.7725 & 0.1059 & 0.8333 & 0.8196 & 0.8212\\
+  Preproc.4 & 308 & 382 & 43 & 92 & 0.8364 & 0.77 & 0.1012 & 0.8344 & 0.8202 & 0.822\\
+  Preproc.5 & 308 & 382 & 43 & 92 & 0.8364 & 0.77 & 0.1012 & 0.8344 & 0.8202 & 0.822\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{\href{https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html}{Random Forest}}
+
+Seleccionamos 1000 estimadores simples, utilizamos \texttt{n\_jobs=4}
+para paralelizar el cómputo. El resto de parámetros son los elegidos
+por defecto en la implementación.
+
+El código de creación del modelo es:
+\begin{lstlisting}
+  rf=RandomForestClassifier(n_estimators=1000, n_jobs=4, random_state=SEED)
+\end{lstlisting}
+
+Sus resultados para cada preprocesado son:
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de Random Forest sobre los distintos preprocesados}
+\label{tab:rf}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+  Preproc.1 & 322 & 347 & 78 & 78 & 0.8109 & 0.805 & 0.1835 & 0.8107 & 0.805 & 0.805\\
+  Preproc.2 & 344 & 419 & 97 & 101 & 0.794 & 0.773 & 0.188 & 0.7925 & 0.7765 & 0.7765\\
+  Preproc.3 & 322 & 344 & 81 & 78 & 0.8073 & 0.805 & 0.1906 & 0.8072 & 0.802 & 0.802\\
+  Preproc.4 & 325 & 340 & 85 & 75 & 0.8061 & 0.8125 & 0.2 & 0.8063 & 0.8025 & 0.8025\\
+  Preproc.5 & 327 & 339 & 86 & 73 & 0.8073 & 0.8175 & 0.2024 & 0.8076 & 0.8044 & 0.8045\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{\href{https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html}{Support Vector Machine}}
+
+Regularizamos con \texttt{C=0.25}. El resto de parámetros son los
+elegidos por defecto en la implementación.
+
+El código de creación del modelo es:
+\begin{lstlisting}
+  svc=SVC(C=0.25, random_state=SEED)
+\end{lstlisting}
+
+Sus resultados para cada preprocesado son:
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de SVM sobre los distintos preprocesados}
+\label{tab:svm}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+  Preproc.1 & 297 & 298 & 127 & 103 & 0.7212 & 0.7425 & 0.2988 & 0.7218 & 0.7209 & 0.7212\\
+  Preproc.2 & 298 & 381 & 135 & 147 & 0.7066 & 0.6697 & 0.2616 & 0.704 & 0.6788 & 0.6789\\
+  Preproc.3 & 296 & 299 & 126 & 104 & 0.7212 & 0.74 & 0.2965 & 0.7218 & 0.7202 & 0.7205\\
+  Preproc.4 & 278 & 292 & 133 & 122 & 0.6909 & 0.695 & 0.3129 & 0.691 & 0.6856 & 0.6856\\
+  Preproc.5 & 344 & 351 & 74 & 56 & 0.8424 & 0.86 & 0.1741 & 0.8429 & 0.8411 & 0.8413\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{\href{https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html}{Gaussian Naive-Bayes}}
+Este modelo se basa en el
+\href{https://en.wikipedia.org/wiki/Bayes%27_theorem}{Teorema de Bayes}
+  para la estimación de la probabilidad de que una instancia
+  pertenezca una determinada a clase dado un valor de una variable
+  utilizando la probabilidad de que la variable presente ese valor si
+  la instancia pertenece a la anterior clase. Esta última probabilidad
+  se estima usando las frecuencias relativas en el caso de variables
+  discretas, para las variables numéricas se supone que se distribuyen
+  por una normal (de ahí el nombre de Gaussian). También se supone que
+  las variables son independientes, por lo que este modelo puede
+  beneficiarse de la eliminación de características redundantes o
+  innecesarias.
+
+El código de creación del modelo es:
+\begin{lstlisting}
+  gnb=GaussianNB()
+\end{lstlisting}
+
+Sus resultados para cada preprocesado son:
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de Naive-Bayes sobre los distintos preprocesados}
+\label{tab:gnb}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+  Preproc.1 & 341 & 340 & 85 & 59 & 0.8255 & 0.8525 & 0.2 & 0.8263 & 0.8257 & 0.8261\\
+  Preproc.2 & 374 & 413 & 103 & 71 & 0.8189 & 0.8404 & 0.1996 & 0.8204 & 0.8113 & 0.8118\\
+  Preproc.3 & 346 & 347 & 78 & 54 & 0.84 & 0.865 & 0.1835 & 0.8407 & 0.8398 & 0.8402\\
+  Preproc.4 & 354 & 321 & 104 & 46 & 0.8182 & 0.885 & 0.2447 & 0.8201 & 0.8252 & 0.8271\\
+  Preproc.5 & 354 & 321 & 104 & 46 & 0.8182 & 0.885 & 0.2447 & 0.8201 & 0.8252 & 0.8271\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{\href{https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html}{KNN}}
+
+Elegimos tener en cuenta los 15 vecinos más cercanos. El resto de
+parámetros son los elegidos por defecto en la implementación.
+
+El código de creación del modelo es:
+\begin{lstlisting}
+  knn=KNeighborsClassifier(n_neighbors=15)
+\end{lstlisting}
+
+Sus resultados para cada preprocesado son:
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de KNN sobre los distintos preprocesados}
+\label{tab:knn}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+  Preproc.1 & 338 & 317 & 108 & 62 & 0.7939 & 0.845 & 0.2541 & 0.7954 & 0.7991 & 0.8002\\
+  Preproc.2 & 368 & 399 & 117 & 77 & 0.7981 & 0.827 & 0.2267 & 0.8001 & 0.7914 & 0.7921\\
+  Preproc.3 & 341 & 311 & 114 & 59 & 0.7903 & 0.8525 & 0.2682 & 0.7921 & 0.7977 & 0.7993\\
+  Preproc.4 & 329 & 331 & 94 & 71 & 0.8 & 0.8225 & 0.2212 & 0.8007 & 0.7995 & 0.7998\\
+  Preproc.5 & 328 & 356 & 69 & 72 & 0.8291 & 0.82 & 0.1624 & 0.8288 & 0.8231 & 0.8231\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{\href{https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html}{Red neuronal}}
+
+Mantuvimos la configuración por defecto, porque los resultados de
+\emph{early stopping} no fueron satisfactorios. Seleccionamos
+\texttt{max\_iter=500} porque con el valor por defecto (200)
+recibíamos un warning de convergencia.
+
+El código de creación del modelo es:
+\begin{lstlisting}
+  rn=MLPClassifier(max_iter=500,random_state=SEED)
+\end{lstlisting}
+
+Sus resultados para cada preprocesado son:
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de la Red Neuronal sobre los distintos preprocesados}
+\label{tab:mlp}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+  Preproc.1 & 337 & 332 & 93 & 63 & 0.8109 & 0.8425 & 0.2188 & 0.8118 & 0.812 & 0.8126\\
+  Preproc.2 & 366 & 410 & 106 & 79 & 0.8075 & 0.8225 & 0.2054 & 0.8085 & 0.7983 & 0.7986\\
+  Preproc.3 & 323 & 338 & 87 & 77 & 0.8012 & 0.8075 & 0.2047 & 0.8014 & 0.7975 & 0.7976\\
+  Preproc.4 & 342 & 337 & 88 & 58 & 0.823 & 0.855 & 0.2071 & 0.824 & 0.8241 & 0.8246\\
+  Preproc.5 & 333 & 355 & 70 & 67 & 0.8339 & 0.8325 & 0.1647 & 0.8339 & 0.8294 & 0.8294\\
+\hline
+\end{tabular}
+\end{table}
 
 \section{Análisis de resultados} \label{sec:analisis}
 
-\subsection{Sobre preprocesado 1}
+Sobre cada uno de los preprocesamientos, discutiremos el desempeño de
+los modelos configurados y cuál es el más adecuado para el problema.
+Comenzaremos con una comparación general, y para cada preprocesamiento
+nos centraremos en qué ha cambiado e intentaremos buscar
+explicaciones.
 
-\subsection{Sobre preprocesado 2}
+\subsection{Sobre preprocesado 1: Eliminación de valores perdidos}
+
+\begin{table}[H]
+\centering
+\caption{Resultados de los algoritmos configurados al eliminar los
+  datos con valores perdidos}
+\label{tab:res-dropna}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+Dummy & 400 & 0 & 425 & 0 & 0.4848 & 1.0 & 1.0 & 0.5 & 0.6531 & 0.6963\\
+DecisionTree & 308 & 380 & 45 & 92 & 0.8339 & 0.77 & 0.1059 & 0.8321 & 0.8181 & 0.8197\\
+GaussianNB & 341 & 340 & 85 & 59 & 0.8255 & 0.8525 & 0.2 & 0.8263 & 0.8257 & 0.8261\\
+SupportVectorM & 297 & 298 & 127 & 103 & 0.7212 & 0.7425 & 0.2988 & 0.7218 & 0.7209 & 0.7212\\
+RandomForest & 322 & 347 & 78 & 78 & 0.8109 & 0.805 & 0.1835 & 0.8107 & 0.805 & 0.805\\
+KNN & 338 & 317 & 108 & 62 & 0.7939 & 0.845 & 0.2541 & 0.7954 & 0.7991 & 0.8002\\
+NeuralNetwork & 337 & 332 & 93 & 63 & 0.8109 & 0.8425 & 0.2188 & 0.8118 & 0.812 & 0.8126\\
+\hline
+\end{tabular}
+\end{table}
+
+Atendiendo a Acc. y AUC, el modelo que mejores resultados obtiene es
+Árbol de Decisión, seguido por Naive-Bayes y el resto de modelos
+excepto SVM, que se queda bastante atrás. Todos los modelos, incluso
+SVM, superan con creces a Dummy.
+
+Atendiendo a las métricas F1-score y G-measure, ocurre algo similar,
+con la excepción de que esta vez es Naive-Bayes el algoritmo que
+consigue los máximos scores, ya que el Árbol de decisión falla más al
+clasificar los ejemplos positivos y estas métricas los priorizan más.
+
+Podemos utilizar las métricas TPR (proporción de instancias positivas
+bien clasificadas) y FPR (proporción de instancias negativas mal
+clasificadas) para representar los modelos en el espacio ROC,
+recordemos que un modelo es mejor si en el espacio ROC se sitúa más al
+noroeste.
+
+\begin{figure}[H]
+  \centering
+  \label{fig:roc1}
+  \caption{Algoritmos sobre el preprocesado 1 representados en el espacio ROC}
+  \includegraphics[width=80mm]{figures/roc1}
+\end{figure}
+
+Observamos que Naive-Bayes obtiene mejores resultados que la mayoría
+de modelos, se ve superado por el Árbol de Decisión en la
+clasificación de elementos negativos (DecisionTree está mas al oeste),
+pero a la hora de clasificar positivos tiene más éxito Naive-Bayes
+(está más al norte), lo que refleja sus mejores F1-score y G-measure.
+
+\subsection{Sobre preprocesado 2: Imputación de valores perdidos}
+Como dijimos en su momento, sólo consideraremos la mediana para
+imputar valores perdidos en variables numéricas, ya que obtuvo mejores
+resultados que la media.
+
+\begin{table}[H]
+\centering
+\caption{Resultados de los algoritmos configurados al imputar las
+  variables numéricas con la mediana y las nominales con la moda}
+\label{tab:res-median}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+Dummy & 445 & 0 & 516 & 0 & 0.4631 & 1.0 & 1.0 & 0.5 & 0.633 & 0.6805\\
+DecisionTree & 337 & 458 & 58 & 108 & 0.8273 & 0.7573 & 0.1124 & 0.8225 & 0.8024 & 0.8038\\
+GaussianNB & 374 & 413 & 103 & 71 & 0.8189 & 0.8404 & 0.1996 & 0.8204 & 0.8113 & 0.8118\\
+SupportVectorM & 298 & 381 & 135 & 147 & 0.7066 & 0.6697 & 0.2616 & 0.704 & 0.6788 & 0.6789\\
+RandomForest & 344 & 419 & 97 & 101 & 0.794 & 0.773 & 0.188 & 0.7925 & 0.7765 & 0.7765\\
+KNN & 368 & 399 & 117 & 77 & 0.7981 & 0.827 & 0.2267 & 0.8001 & 0.7914 & 0.7921\\
+NeuralNetwork & 366 & 410 & 106 & 79 & 0.8075 & 0.8225 & 0.2054 & 0.8085 & 0.7983 & 0.7986\\
+\hline
+\end{tabular}
+\end{table}
+
+Observamos que todos los modelos han visto minada su capacidad de
+predicción en las cuatro métricas que estamos considerando, excepto
+KNN con las métricas Acc. y AUC, que han aumentado levemente. Pero
+aunque haya clasificado bien más ejemplos, ha perdido eficacia a la
+hora de clasificar ejemplos positivos, por lo que las métricas
+F1-score y G-measure han empeorado. Es por esto que abandonamos en su
+momento la idea de imputar los valores perdidos.
+
+\begin{figure}[H]
+  \centering
+  \label{fig:roc2}
+  \caption{Algoritmos sobre el preprocesado 2 representados en el espacio ROC}
+  \includegraphics[width=80mm]{figures/roc2}
+\end{figure}
+
+En el espacio ROC, imputar los valores perdidos no ha provocado que
+algún modelo sobrepase a otro, simplemente han empeorado en distinta
+medida sus scores.
+
+\subsection{Sobre preprocesado 3: Eliminación de características
+  innecesarias}
+
+La simplificación del conjunto de características se realiza sobre los
+datos sin las instancias con valores perdidos, es por eso que debemos
+comparar esta tabla con la Tabla \ref{tab:res-dropna}.
+
+\begin{table}[H]
+\centering
+\caption{Resultados de los algoritmos configurados al simplificar el
+  conjunto de características}
+\label{tab:res-features}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+Dummy & 400 & 0 & 425 & 0 & 0.4848 & 1.0 & 1.0 & 0.5 & 0.6531 & 0.6963\\
+DecisionTree & 309 & 380 & 45 & 91 & 0.8352 & 0.7725 & 0.1059 & 0.8333 & 0.8196 & 0.8212\\
+GaussianNB & 346 & 347 & 78 & 54 & 0.84 & 0.865 & 0.1835 & 0.8407 & 0.8398 & 0.8402\\
+SupportVectorM & 296 & 299 & 126 & 104 & 0.7212 & 0.74 & 0.2965 & 0.7218 & 0.7202 & 0.7205\\
+RandomForest & 322 & 344 & 81 & 78 & 0.8073 & 0.805 & 0.1906 & 0.8072 & 0.802 & 0.802\\
+KNN & 341 & 311 & 114 & 59 & 0.7903 & 0.8525 & 0.2682 & 0.7921 & 0.7977 & 0.7993\\
+NeuralNetwork & 323 & 338 & 87 & 77 & 0.8012 & 0.8075 & 0.2047 & 0.8014 & 0.7975 & 0.7976\\
+\hline
+\end{tabular}
+\end{table}
+
+Esta vez sí observamos comportamientos distintos entre modelos.
+Observamos un aumento en la mayoría de modelos en las cuatro métricas
+que consideramos, con la excepción de la Red Neuronal, que parecía
+aprovechar parte de la información que hemos desechado y por tanto ha
+bajado. En el caso de Naive-Bayes, se ha producido una mejora
+significativa, esto se debe a que al simplificar el conjunto de
+variables es probable que disminuya el grado de dependencia entre las
+mismas, por lo que la suposición que realiza este modelo de que las
+características son independientes cobra más realismo.
+
+\begin{figure}[H]
+  \centering
+  \label{fig:roc3}
+  \caption{Algoritmos sobre el preprocesado 3 representados en el espacio ROC}
+  \includegraphics[width=80mm]{figures/roc3}
+\end{figure}
+
+GaussianNB ahora sobrepasa a Random Forest a la hora de clasificar
+elementos negativos (se sitúa más al oeste), y ya es mejor que
+cualquiera de los demás modelos salvo el Árbol de decisión, pero éste
+clasifica bastante mal los positivos en comparación con el resto, sólo
+supera a Naive-Bayes a la hora de clasificar negativos, por lo que sus
+métricas F1-score y G-measure son bastante peores.
+
+\subsection{Sobre preprocesado 4: Binarización de características
+  nominales}
+
+La binarización se produce sobre los datos del preprocesado 3, así que
+debemos comparar esta tabla con la Tabla \ref{tab:res-features}.
+
+\begin{table}[H]
+\centering
+\caption{Resultados de los algoritmos configurados al binarizar las características nominales}
+\label{tab:res-binarization}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+Dummy & 400 & 0 & 425 & 0 & 0.4848 & 1.0 & 1.0 & 0.5 & 0.6531 & 0.6963\\
+DecisionTree & 308 & 382 & 43 & 92 & 0.8364 & 0.77 & 0.1012 & 0.8344 & 0.8202 & 0.822\\
+GaussianNB & 354 & 321 & 104 & 46 & 0.8182 & 0.885 & 0.2447 & 0.8201 & 0.8252 & 0.8271\\
+SupportVectorM & 278 & 292 & 133 & 122 & 0.6909 & 0.695 & 0.3129 & 0.691 & 0.6856 & 0.6856\\
+RandomForest & 325 & 340 & 85 & 75 & 0.8061 & 0.8125 & 0.2 & 0.8063 & 0.8025 & 0.8025\\
+KNN & 329 & 331 & 94 & 71 & 0.8 & 0.8225 & 0.2212 & 0.8007 & 0.7995 & 0.7998\\
+NeuralNetwork & 342 & 337 & 88 & 58 & 0.823 & 0.855 & 0.2071 & 0.824 & 0.8241 & 0.8246\\
+\hline
+\end{tabular}
+\end{table}
+
+Este preprocesado ha provocado una mejora significativa en la Red
+Neuronal, que parece aprovecharse de que el número de variables sea
+alto.
+
+Cuando introdujimos esta idea, comentamos porqué KNN debía
+beneficiarse de ella, sin embargo la mejora de sus resultados es
+bastante leve, y se debe a un aumento de aciertos en elementos de la
+clase negativa (de hecho los aciertos en positivos decrecen), por lo
+que apenas cambian las métricas F1-score y G-measure.
+
+Naive-Bayes ha vuelto a bajar, debido a que estamos introduciendo más
+características que por supuesto no son independientes. Por ejemplo,
+al eliminar Margin introducimos 5 variables binarias, y el hecho de
+que alguna de ellas valga 1 obliga a las otras 4 a valer 0, por lo que
+son muy bastante dependientes.
+
+En cuanto a SVM, sufre una caída significativa en todos sus scores.
+Viendo su posterior desempeño tras el preprocesamiento 5, sospechamos
+que éste algoritmo requiere que las variables presenten escalas
+similares, y convertir variables que toman valores entre 1 y 4 o entre
+1 y 5 en variables que toman los valores 0 y 1, aumenta aun más la
+diferencia de escala con la variable Age.
+
+El resto de modelos apenas experimentan cambios en sus scores.
+
+\begin{figure}[H]
+  \centering
+  \label{fig:roc4}
+  \caption{Algoritmos sobre el preprocesado 4 representados en el espacio ROC}
+  \includegraphics[width=80mm]{figures/roc4}
+\end{figure}
+
+En el espacio ROC, los modelos Neural Network, KNN y Random Forest
+sobrepasan a Naive-Bayes a la hora de clasificar ejemploso negativos,
+pero NB sigue siendo el que mejor clasifica los positivos, que para
+nuestro problema tienen prioridad.
+
+\subsection{Sobre preprocesado 5: Reescalado de los datos}
+
+Comparamos esta tabla con la tabla \ref{tab:res-binarization}.
+
+\begin{table}[H]
+\centering
+\caption{Resultados de los algoritmos configurados al estandarizar las
+  variables}
+\label{tab:res-stdScaler}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+Dummy & 400 & 0 & 425 & 0 & 0.4848 & 1.0 & 1.0 & 0.5 & 0.6531 & 0.6963\\
+DecisionTree & 308 & 382 & 43 & 92 & 0.8364 & 0.77 & 0.1012 & 0.8344 & 0.8202 & 0.822\\
+GaussianNB & 354 & 321 & 104 & 46 & 0.8182 & 0.885 & 0.2447 & 0.8201 & 0.8252 & 0.8271\\
+SupportVectorM & 344 & 351 & 74 & 56 & 0.8424 & 0.86 & 0.1741 & 0.8429 & 0.8411 & 0.8413\\
+RandomForest & 327 & 339 & 86 & 73 & 0.8073 & 0.8175 & 0.2024 & 0.8076 & 0.8044 & 0.8045\\
+KNN & 328 & 356 & 69 & 72 & 0.8291 & 0.82 & 0.1624 & 0.8288 & 0.8231 & 0.8231\\
+NeuralNetwork & 333 & 355 & 70 & 67 & 0.8339 & 0.8325 & 0.1647 & 0.8339 & 0.8294 & 0.8294\\
+\hline
+\end{tabular}
+\end{table}
+
+Al estandarizar los atributos, los árboles tienen idéntico
+comportamiento porque ellos tratan las variables por separado (en cada
+nodo toman una decisión de acuerdo a una única característica). Lo
+mismo le ocurre a GaussianNB, que supone las variables independientes
+y no atiende a las relaciones entre las mismas.
+
+KNN se beneficia bastante de esta medida, ya que le estaba dando una
+importancia exagerada a la Edad, que presentaba una escala mucho mayor
+que el resto de variables.
+
+Neural Network también experimenta una leve mejora, el hecho de que
+las características presenten escalas similares acostumbra a facilitar
+el aprendizaje de modelos de este tipo.
+
+El gran beneficiado con esta técnica es SVM, que parece depender
+fuertemente de que las escalas de las variables sean similares. Ha
+obtenido los mejores scores en las cuatro métricas que estamos
+considerando.
+
+\begin{figure}[H]
+  \centering
+  \label{fig:roc5}
+  \caption{Algoritmos sobre el preprocesado 5 representados en el espacio ROC}
+  \includegraphics[width=80mm]{figures/roc5}
+\end{figure}
+
+En el espacio ROC, SVM sobrepasa a todos los modelos excepto a
+Naive-Bayes a la hora de clasificar instancias positivas, pero su
+mucho mayor éxito con las instancias negativas compensa.
+
+Consideramos que SVM con el procesamiento 5 es el más adecuado para el
+problema. Suponiendo que F1-score y G-measure son métricas adecuadas
+para lograr un equilibrio entre priorizar los aciertos en las clases
+positivas y el desempeño general de los algoritmos.
 
 \section{Interpretación de resultados}
 
@@ -803,6 +1305,11 @@ uno.
 % mayor regularización sube TP pero baja TN ¿Puede ser que haya mayor
 % densidad de negativos cerca de la frontera? Una frontera mas simple
 % clasifica mejor los positivos, una mas compleja los negativos
+
+\subsection{Métricas alternativas}
+
+% Si se tuviese más presupuesto, se requiriese más seguridad a la hora
+% de descartar etc.
 
 \section{Bibliografía/Webgrafía}
 
