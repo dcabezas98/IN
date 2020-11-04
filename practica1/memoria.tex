@@ -119,7 +119,7 @@ Empezamos analizando el dataset. Como ya hemos comentado, consta de
 \item Severidad: variable objetivo a predecir, benigno o maligno. 
 \end{enumerate}
 
-Hay algunos datos perdidos en el dataset: \vspace{-5mm}
+Hay algunos valores perdidos en el dataset: \vspace{-5mm}
 \begin{table}[H]
   \centering
   \begin{tabular}{c|c}
@@ -131,14 +131,14 @@ Hay algunos datos perdidos en el dataset: \vspace{-5mm}
     Severity    & 0
   \end{tabular}
 \end{table}
-\vspace{-8mm} En principio, no hay los suficientes datos perdidos como
+\vspace{-8mm} En principio, no hay los suficientes valores perdidos como
 para dejar de considerar alguna variable, pero durante el procesado de
 datos discutiremos si eliminar alguna o cómo imputar los datos
 perdidos.
 
 De los 961 instancias, 445 pertenecen a la clase maligno (46.3\%) y
 516 a benigno (53.7\%). Las clases están bastante balanceadas, lo que
-en genral convierte a la accuracy en una métrica bastante adecuada y
+en general convierte a la accuracy en una métrica bastante adecuada y
 fácil de interpretar (proporción de ejemplos bien clasificados) para
 la bondad de los algoritmos de clasificación. Sin embargo, en este
 problema concreto, parece mucho más grave un falso negativo
@@ -198,6 +198,9 @@ Hay que tener en cuenta que el valor 0 en el código BI-RADS significa
 radiografía insuficiente, y el valor N en la forma significa que la
 forma no está definida. Así que consideraremos estos valores como
 perdidos.
+
+Nos quedamos con 825 instancias, 400 positivias (maligno) y 425
+negativas (benigno). Siguen bastante balanceadas.
 
 Ejecutamos los algoritmos sobre estos datos y obtenemos los siguientes
 resultados:
@@ -319,9 +322,9 @@ eliminar esta variable.
 
 Estas dos acciones suponen obviamente una pérdida de información, pero
 ayuda a reducir la complejidad de los modelos y los hace más
-fácilmente interpretables (la característica se convierte en binaria),
-de modo que mantendremos esta decisión siempre que no suponga un
-descenso notable en el desempeño de los algoritmos.
+fácilmente interpretables, de modo que mantendremos esta decisión
+siempre que no suponga un descenso notable en el desempeño de los
+algoritmos.
 
 No nos muestra la desviación de Shape al no ser numérica, pero
 obtenemos igualmente su distribución con \texttt{Counter} y observamos
@@ -564,7 +567,7 @@ impureza
 \begin{table}[H]
 \centering
 \caption{Desempeño de árboles de decisión de distinta profundidad}
-\label{tab:tuning-dt}
+\label{tab:dt-tuning}
 \begin{tabular}{|lrrrrrrrrrr|}
 \hline
  & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
@@ -603,7 +606,7 @@ siguientes resultados:
 \begin{table}[H]
 \centering
 \caption{Desempeño de Random Forest con distinto número de estimadores}
-\label{tab:tuning-rf}
+\label{tab:rf-tuning}
 \begin{tabular}{|lrrrrrrrrrr|}
 \hline
  & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
@@ -623,7 +626,7 @@ bajo, probaremos a aumentarlo aún más.
 \begin{table}[H]
 \centering
 \caption{Desempeño de Random Forest con distinto número de estimadores}
-\label{tab:tuning-rf}
+\label{tab:rf-tuning2}
 \begin{tabular}{|lrrrrrrrrrr|}
 \hline
  & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
@@ -671,7 +674,7 @@ preprocesamiento 5 obtenemos los siguientes resultados:
 \begin{table}[H]
 \centering
 \caption{C-SVM con distintas regularizaciones}
-\label{tab:tuning-svm}
+\label{tab:svm-tuning}
 \begin{tabular}{|lrrrrrrrrrr|}
 \hline
  & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
@@ -1293,29 +1296,369 @@ problema. Suponiendo que F1-score y G-measure son métricas adecuadas
 para lograr un equilibrio entre priorizar los aciertos en las clases
 positivas y el desempeño general de los algoritmos.
 
-\section{Interpretación de resultados}
+\subsection{¿Qué podríamos mejorar?}
+
+Para intentar mejorar los resultados, podríamos intentar algunos
+cambios más tanto en la configuración de los modelos como en el
+preprocesado de datos.
+
+En el caso de SVM, que ha conseguido los mejores resultados (con el
+preprocesado 5), podríamos experimentar con diferentes kernels, como
+polinomios de distintos grados, lineal, sigmoide, etc. También
+podríamos ajustar con más precisión el parámetro de regularización C,
+probando una amplia gama de valores alrededor de 0.25.
+
+Naive-Bayes también ha conseguido muy buenos resultados con el
+preprocesado 3, pero fue perjudicado por el preprocesado 4. Podríamos
+no realizar el preprocesado 4 e intentar otras técnicas de
+preprocesado como las que detallamos más adelante.
+
+En el caso de Decision Tree, una posibilidad sería cambiar de criterio
+para elegir por qué variable separar en cada nodo. Además de Gini, la
+entropía es otro criterio muy utilizado que no hemos probado
+(algoritmo ID3).
+
+Random Forest es un modelo muy flexible y con muchos parámetros,
+podríamos intentar cambiar más parámetros como son el criterio para
+medir la calidad de la separación en un nodo (por defecto usa Gini,
+podríamos probar Entropy), la profundidad máxima de los estimadores
+(para el Árbol de Decisión, ha dado muy buenos resultados) o la
+cantidad de muestras/variables que se utilizan para construir los
+estimadores simples (por defecto se utilizan todas las muestras y la
+raíz cuadrada del número de variables, para esto último también se
+suele utilizar el logaritmo en base dos del número de datos).
+
+También en los árboles, se puede introducir un parámetro $\alpha$,
+quepenaliza el número de nodos del árbol, con el objetivo de
+regularizar y obtener árboles más simples.
+
+Para KNN, podríamos haber experimentado con otras métricas en lugar de
+la euclídea como la
+\href{https://en.wikipedia.org/wiki/Taxicab_geometry}{distancia
+  Manhattan} o la
+\href{https://en.wikipedia.org/wiki/Uniform_norm}{norma del máximo},
+también podríamos haberle dado más peso a los vecinos más cercanos
+(dentro de los 15 que se tienen en cuenta, que el voto de cada uno
+tenga un peso inversamente proporcional a la distancia a la que se
+encuentra). También podríamos haber probado una gama más amplia de
+valores de K.
+
+Para la Red Neuronal, podríamos haber intentado distintas
+arquitecturas jugando con el número de capas y el número de neuronas
+de cada una. También podríamos haber probado con distintas funciones
+de activación (en lugar de relu que es la por defecto, sigmoide o
+tangente hiperbólica). También se puede ajustar un parámetro de
+regularización $\alpha$ para penalizar los pesos elevados.
+
+Para el preprocesamiento, podríamos haber estudiado otras formas de
+imputar los valores perdidos, ya que las que hemos probado no han dado
+buen resultado. Con \texttt{KNNImputer} de \textit{sklearn}, podemos
+usar la técnica de los K vecinos más cercanos para imputar valores
+perdidos. También existen otras técnicas como las basadas en SVM.
+
+\section{Interpretación de resultados} \label{sec:interpretacion}
+
+Analizaremos dos modelos para determinar los factores que más
+contribuyen a la pertenencia a una determinada clase. Ambos modelos
+utilizan árboles, así que los ejecutaremos sobre el preprocesado 4,
+que produce el mismo comportamiento que el 5.
+
+\subsection{Visualización del Árbol de Decisión}
+Visualizaremos el Árbol de Decisión obtenido, cuya profundidad
+limitamos a 3. Esto nos permite conocer las reglas de clasificación
+que utiliza el modelo con un simple vistazo.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=190mm]{figures/tree}
+  \caption{Árbol de Decisión}
+  \label{fig:tree}
+\end{figure}
+
+Observamos que cuando el código BI-RADS es mayor o igual a 4.5 (es
+decir, 5 ó 6, que colapsamos a 5), el árbol automáticamente predice
+que el tumor es maligno. Para código BI-RADS 4 o menor (que colapsamos
+a 4), siempre predice benigno salvo que la forma sea Irregular y el
+paciente sea mayor de 69 años, que predice maligno.
+
+Por ejemplo, si una instancia presenta código BI-RADS 4, cae en el
+subárbol de la izquierda, y si la forma del tumor no fuese Irregular,
+volvería a caer hacia la izquierda. Según la edad del paciente, caería
+en el nodo hoja de más a la izquierda o en el segundo, pero igualmente
+se catalogaría como benigno.
+
+Observamos que la variable que más ayuda a decididir a este modelo es
+el código BI-RADS, lo que lo convierte en un factor clave a la hora de
+realizar la predicción.
+
+\subsection{Importancia de las características para Random Forest}
+
+Podemos pedir a Random Forest que asigne un porcentaje de importancia
+a las características según la frecuencia con la que aparecen en los
+niveles altos de los árboles que utiliza como clasificadores simples.
+Recordemos que el desempeño de Random Forest ha sido algo peor que el
+del Árbol de Decisión.
+
+Conseguimos esto con el atributo \texttt{feature\_importances\_} de la
+clase \texttt{RandomForestClassifier}, con el modelo ya entrenado.
+
+La importancia de las características que hemos obtenido es:
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{r|l}
+    Age & 0.3615 \\
+    BI-RADS & 0.2813 \\
+    Margin=1 & 0.1378 \\
+    Shape=I & 0.1027 \\
+    Shape=O & 0.03 \\
+    Shape=R & 0.0242 \\
+    Margin=4 & 0.0192 \\
+    Margin=5 & 0.0168 \\
+    Shape=L & 0.0114 \\
+    Margin=3 & 0.0098 \\
+    Margin=2 & 0.0055 \\
+  \end{tabular}
+  \caption{Importancia de las variables asignada por Random Forest}
+  \label{tab:importance}
+\end{table}
+
+La característica que más utiliza Random Forest para separar los datos
+de un nodo es la edad, tampoco debe sorprendernos, puesto que tiene un
+rango de valores mucho más amplio que el resto de variables (que solo
+pueden tomar dos valores). También se basa bastante el código BI-RADS,
+como cabría esperar.
+
+El hecho de que la forma de la masa tumoral sea Irregular, es el la
+segunda tercera característica más importante, esto concuerda con su
+aparición en el hijo izquierdo de la raíz en el árbol de decisión. Le
+sigue comprobar si el margen vale 1 (circumscribed), que aparece en el
+nodo más a la derecha del nivel 2 (empezando en 0) del árbol de
+decisión. Y bastante por detrás, comprobar si la forma es Ovalada,
+queaparece en el nodo de la izquierda del antes mencionado.
+
+Podemos sumar las características binarias en las que hemos desplegado
+Margin y Shape para tener una idea de la importancia de estas
+características.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{r|l}
+    Age & 0.3615 \\
+    BI-RADS & 0.2813 \\
+    Margin & 0.189 \\
+    Shape & 0.1682 \\
+  \end{tabular}
+  \caption{Importancia de las variables asignada por Random Forest, agrupando Shape y Margin}
+  \label{tab:importance2}
+\end{table}
+
+Y parece que Margin ha tenido más relevancia para Random Foreset, pero
+ambas siguen por debajo de Age y BI-RADS.
+
+Ahora podríamos preguntarnos, ¿qué hubiese paso si no hubiesemos
+simplificado el conjuto de características? Volvemos a hacer esto,
+pero manteniendo la distribución original de BI-RADS (sin colapsar
+valores) y la columna Density (que eliminamos). También omitimos la
+binarización de características nominales, ya que para los árboles no
+suele ser un problema trabajar con ellas. Esta vez obtenemos:
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{r|l}
+    BI-RADS & 0.3266 \\
+    Age & 0.311 \\
+    Margin & 0.1788 \\
+    Shape & 0.1563 \\
+    Density & 0.0273 \\
+  \end{tabular}
+  \caption{Importancia de las variables asignada por Random Forest, sobre procesamiento básico}
+  \label{tab:importance3}
+\end{table}
+
+Efectivamente la relevancia de Density a la hora de clasificar las
+muestras es muy baja, por lo que hicimos bien eliminándola. Aunque
+parece que simplificar los valores de BI-RADS (colapsando en 4 y 5)
+provocó que la variable perdiese interés y se viese superada por Age
+en importancia para Random Forest. Repetimos este experimento, pero
+esta vez mantenemos simplificados los valores de BI-RADS.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{r|l}
+    Age & 0.3219 \\
+    BI-RADS & 0.3153 \\
+    Margin & 0.1798 \\
+    Shape & 0.1558 \\
+    Density & 0.0272 \\
+  \end{tabular}
+  \caption{Importancia de las variables asignada por Random Forest, manteniendo Density pero simplificando BI-RADS}
+  \label{tab:importance4}
+\end{table}
+
+Efectivamente su simplificación le hizo perder a la variable BI-RADS
+algo de importancia. Pero la mayor pérdida de importancia de BI-RADS
+se produce cuando eliminamos Density. Por tanto esta decisión (de
+simplificar los valores de BI-RADS) no ha tenido demasiada repercusión
+respecto al interés de la variable.
 
 \section{Contenido adicional}
 
-\subsection{Predecir sin BI-RADS}
-
 \subsection{Disposición de los datos}
 
-% en la sección \ref{sec:configuracion} vemos en varios modelos que a
-% mayor regularización sube TP pero baja TN ¿Puede ser que haya mayor
-% densidad de negativos cerca de la frontera? Una frontera mas simple
-% clasifica mejor los positivos, una mas compleja los negativos
+En la sección \ref{sec:configuracion} vemos en algunos modelos que a
+mayor regularización sube TP (elementos positivos clasificados
+correctamente) pero baja TN (elementos negativos clasificados
+correctamente). Esto se observa en las regularizaciones de los
+algoritmos:
+
+\begin{itemize}
+\item Random Forest, Tablas \ref{tab:rf-tuning} y
+  \ref{tab:rf-tuning2}: Al aumentar el número de estimadores decrece
+  la dependencia de los datos de entrenamiento.
+\item SVM, Tabla \ref{tab:svm-tuning}: Un valor menor de C da lugar a
+  una frontera con mayor margen, aunque permite que algunos valores
+  los violen. C=50 es una excepción de esta regla.
+\item Neural Network, Tabla \ref{tab:mlp-tuning}: Regularizar con
+  \emph{early stopping} provoca una mejor clasificación de las
+  instancias positivas pero una peor clasificación de las negativas.
+\end{itemize}
+
+Este hecho parece indicar que fronteras simples (regularizadas),
+clasifican mejor los elementos positivos y peor los negativos. Esto
+puede indicar que hay una mayor concentración de elementos negativos
+cerca de la frontera entre las clases.
+
+\subsection{Predecir sin BI-RADS}
+
+Hemos observado en la sección \ref{sec:interpretacion}, que la
+variable BI-RADS juega un papel clave en la clasificación de las
+instancias, al menos por parte de los árboles. Pero la medición de
+esta variable requiere la intervención de un experto y puede depender
+de su criterio, luego tiene carácter subjetivo.
+
+Por este motivo, tendría interés preguntarnos qué eficacia podrían
+tener los modelos sin contar con esta variable, basándonos sólo en
+mediciones objetivas (suponiendo que las otras lo sean, podría haber
+dudas con Shape). De hecho, en la
+\href{https://bigml.com/user/TotyB/gallery/dataset/509a98c6035d0706dd0001dd}{página}
+donde se encuentra el dataset, esta variable aparece catalogada como
+No Predictiva. Esto requeriría un análisis similar al que hemos
+realizado a lo largo de la práctica, pero nos podemos hacer una idea
+del desempeño de los algoritmos limitándonos a eliminarla.
+
+\begin{table}[H]
+\centering
+\caption{Desempeño de los modelos al no contar con la variable BI-RADS}
+\label{tab:noBiRads}
+\begin{tabular}{|lrrrrrrrrrr|}
+\hline
+ & TP & TN & FP & FN & Acc & TPR & FPR & AUC & F1-score & G-measure\\ \hline
+Dummy & 400 & 0 & 425 & 0 & 0.4848 & 1.0 & 1.0 & 0.5 & 0.6531 & 0.6963\\
+DecisionTree & 343 & 311 & 114 & 57 & 0.7927 & 0.8575 & 0.2682 & 0.7946 & 0.8005 & 0.8022\\
+GaussianNB & 340 & 320 & 105 & 60 & 0.8 & 0.85 & 0.2471 & 0.8015 & 0.8047 & 0.8059\\
+SupportVectorM & 338 & 320 & 105 & 62 & 0.7976 & 0.845 & 0.2471 & 0.799 & 0.8019 & 0.8029\\
+RandomForest & 323 & 321 & 104 & 77 & 0.7806 & 0.8075 & 0.2447 & 0.7814 & 0.7811 & 0.7816\\
+KNN & 338 & 318 & 107 & 62 & 0.7952 & 0.845 & 0.2518 & 0.7966 & 0.8 & 0.8011\\
+NeuralNetwork & 338 & 324 & 101 & 62 & 0.8024 & 0.845 & 0.2376 & 0.8037 & 0.8057 & 0.8066\\
+\hline
+\end{tabular}
+\end{table}
+
+Comparando con la Tabla \ref{tab:res-stdScaler} y atendiendo a las
+cuatro métricas que hemos considerado durante el desarrollo de la
+práctica, se produce una bajada notable (de entre 2 y 4 puntos,
+entendiendo las métricas como porcentajes) en el desempeño de todos
+los modelos (excepto, obviamente, Dummy). Aun así, logramos scores
+entorno a 0.8, por lo que con el debido preprocesamiento y
+configuración (los actuales no tienen porqué seguir funcionando bien),
+quizá se podrían lograr resultados no mucho peores que los conseguidos
+actualmente (utilizando la variable BI-RADS). Ya depende en el
+problema de la disponibilidad de expertos para tomar estas medias y
+del riesgo que se esté dispuesto a asumir.
 
 \subsection{Métricas alternativas}
 
-% Si se tuviese más presupuesto, se requiriese más seguridad a la hora
-% de descartar etc.
+La métrica Accuracy mide la capacidad general de un modelo para
+clasificar, la proporción de instancias bien clasificadas.
+
+La métrica AUC también mide la capacidad general del modelo, pero
+atiende al desbalanceo de clases. Evita que las clases minoritarias no
+se vean representadas.
+
+Las métricas F1-score y G-measure priorizan los aciertos al clasificar
+las estancias positivas, por lo que las consideramos más adecuadas
+para el problema. Sin embargo, hemos supuesto que estas métricas
+suponían un buen equilibrio entre la prioridad a las instancias
+positivas y el desempeño general del modelo.
+
+Dependiendo de los riesgos que se esté dispuesto a asumir y del dinero
+que se quiera invertir en segundos análisis, podría ser interesante
+considerar métricas que penalizaran aun más los falsos negativos o que
+dieran algo más de importancia a las clases negativas. Por ejemplo, la
+métrica F1-score se calcula:
+\[F1=\frac{2\cdot TP}{2\cdot TP+FP+FN}\] Pero poríamos definir una
+métrica llamada $F_K$, que penalizase aun más los falsos negativos
+cuando $K>1$ o menos cuando $K<1$.
+\[F_K=\frac{2\cdot TP}{2\cdot TP+FP+K\cdot FN}\] Esto depende
+totalmente de la naturaleza del problema, hemos hecho suposiciones,
+pero en un caso real habría que consultarlo con las personas que se
+ayudarían de nuestro algoritmo y expertos en la materia.
 
 \section{Bibliografía/Webgrafía}
 
-http://faculty.marshall.usc.edu/gareth-james/ISL
-Copiarlas de arriba otra vez
-% Yaser
+Libro que seguí en la asignatura Aprendizaje Automático:
+\begin{itemize}
+\item \href{http://www.work.caltech.edu/lectures.html}{http://www.work.caltech.edu/lectures.html}
+\end{itemize}
 
+Libro de donde extraje la figura que muestra el valor de K para
+regularizar en KNN:
+\begin{itemize}
+\item \href{http://faculty.marshall.usc.edu/gareth-james/ISL}{http://faculty.marshall.usc.edu/gareth-james/ISL}
+\end{itemize}
+
+Papel de C al regularizar en SVM:
+\begin{itemize}
+\item \href{https://medium.com/@pushkarmandot/what-is-the-significance-of-c-value-in-support-vector-machine-28224e852c5a}{https://medium.com/@pushkarmandot/what-is-the-significance-of-c-value-in-support-vector-machine-28224e852c5a}
+\end{itemize}
+
+Idea de sumar las matrices de confusión de las particiones de Cross Validation:
+\begin{itemize}
+\item \href{https://stats.stackexchange.com/questions/147175/how-is-the-confusion-matrix-reported-from-k-fold-cross-validation}{https://stats.stackexchange.com/questions/147175/how-is-the-confusion-matrix-reported-from-k-fold-cross-validation}
+\end{itemize}
+
+Dataset:
+\begin{itemize}
+\item \href{https://bigml.com/user/TotyB/gallery/dataset/509a98c6035d0706dd0001dd}{https://bigml.com/user/TotyB/gallery/dataset/509a98c6035d0706dd0001dd}
+\end{itemize}
+
+Documentación \textit{sklearn}:
+\begin{itemize}
+\item Kernel de Funciones de Base Radial: \href{https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.RBF.html}{https://scikit-learn.org/stable/modules/generated\\/sklearn.gaussian\_process.kernels.RBF.html}
+\item Clasificador Dummy: \href{https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyClassifier.html}{https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyClassifier.html}
+\item Árbol de Decisión: \href{https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html}{https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html}
+\item Clasificador Random Forest: \href{https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html}{https://scikit-learn.org/stable/modules/generated\\/sklearn.ensemble.RandomForestClassifier.html}
+\item Clasifiacor C-SVM: \href{https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html}{https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html}
+\item Clasificador Gaussian Naive-Bayes: \href{https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html}{https://scikit-learn.org/stable/modules/generated\\/sklearn.naive\_bayes.GaussianNB.html}
+\item Clasificador KNN \href{https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html}{https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html}
+\item Red Neuronal: \href{https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html}{https://scikit-learn.org/stable/modules/generated/sklearn.neural\_network.MLPClassifier.html}
+\end{itemize}
+
+Wikipedia:
+\begin{itemize}
+\item Código BI-RADS: \href{https://es.wikipedia.org/wiki/BI-RADS}{https://es.wikipedia.org/wiki/BI-RADS}
+\item Impureza Gini: \href{https://es.wikipedia.org/wiki/Aprendizaje_basado_en_%C3%A1rboles_de_decisi%C3%B3n#Impureza_de_Gini}
+    {https://es.wikipedia.org/wiki/Aprendizaje\_basado\_en\_\%C3\%A1rboles\_de\_decisi\%C3\%B3n\\\#Impureza\_de\_Gini}
+\item Distancia Manhattan: \href{https://en.wikipedia.org/wiki/Taxicab_geometry}{https://en.wikipedia.org/wiki/Taxicab\_geometry}
+\item Distancia del supremo: \href{https://en.wikipedia.org/wiki/Uniform_norm}{https://en.wikipedia.org/wiki/Uniform\_norm}
+\end{itemize}
+
+Código: 
+\begin{itemize}
+\item Visualización del árbol de decisión: \href{https://mljar.com/blog/visualize-decision-tree/}{https://mljar.com/blog/visualize-decision-tree/}
+\item Importancia de las variables según Random Forest: \href{https://blog.datadive.net/selecting-good-features-part-iii-random-forests/}{https://blog.datadive.net/selecting-good-features-part-iii-random-forests/}
+\item Matriz de confusión con validación cruzada: \href{https://stackoverflow.com/questions/40057049/using-confusion-matrix-as-scoring-metric-in-cross-validation-in-scikit-learn}{https://stackoverflow.com/questions/40057049/using-confusion-matrix-as-scoring-metric-in-cross-validation-in-scikit-learn}
+\end{itemize}
 
 \end{document}
