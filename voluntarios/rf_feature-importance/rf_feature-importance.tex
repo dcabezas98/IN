@@ -99,11 +99,13 @@ provoque un mayor descenso de la impureza de
   aportar más información.
 
   Es importante \textbf{limitar el número nodos} de los árboles de
-  alguna forma, ya sea añadiendo un coste de complejidad y podando o
-  limitando la profundidad máxima del árbol. Esto es porque si los
-  árboles tienen demasiados nodos, acabarán estando presentes todas
-  las variables o la mayoría de ellas, por lo que este criterio no
-  aportará información.
+  alguna forma, ya sea añadiendo un coste de complejidad que penalice
+  el número de nodos
+  (\href{https://www.analyticsvidhya.com/blog/2020/10/cost-complexity-pruning-decision-trees/}{\emph{Cost
+      Complexity Pruning}}) y podando o limitando la profundidad
+  máxima del árbol. Esto es porque si los árboles tienen demasiados
+  nodos, acabarán estando presentes todas las variables o la mayoría
+  de ellas, por lo que este criterio no aportará información.
 
   Aplicamos este criterio al dataset de Mamografías visto en la
   primera práctica, junto a cada variable mostramos la proporción de
@@ -155,4 +157,46 @@ provoque un mayor descenso de la impureza de
 
   Finalmente, comprobaremos qué variables consideraría relevantes el
   criterio de consultar los primeros nodos de un árbol de decisión.
+
+  Si reducimos el número de nodos el árbol con \emph{Cost Complexity
+    Pruning}, obtenemos el siguiente árbol
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=100mm]{figures/tree_cpp}
+    \caption{Árbol de Decisión obtenido con \emph{Cost Complexity
+    Pruning}}
+\end{figure}
+
+que sugiere que la variable BI-RADS es la más relevante, junto con
+Shape y Age, lo que no contradice al anterior criterio, aunque no
+aporta información sobre Margin.
+
+En cambio, si generamos el Árbol de Decisión simplemente limitando la
+profundiad, obtenemos el siguiente árbol
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=120mm]{figures/tree_depth}
+    \caption{Árbol de Decisión obtenido limitando la profundidad a 3}
+  \end{figure}
+  que sugiere que la variable Density puede ser relevante. Tendríamos
+  que fijarnos entonces en que la reducción de impureza Gini que
+  aporta es baja, luego este método puede resultar engañoso.
+
+  En definitiva, el criterio de estimar la relevancia de las variables
+  por su índice de presencia en Random Forest parece bastante más
+  robusto que atender a los nodos superiores de un árbol de decisión.
+
+  Existen otros criterios basados en Random Forest para estimar la
+  relevancia de las variables, el atributo
+  \href{https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html#sklearn.ensemble.RandomForestClassifier.feature_importances_}{\texttt{feature\_importances\_}}
+  de \texttt{RandomForestClassifier} en \textit{sklearn} proporciona
+  la reducción total de impureza Gini de cada variable en cada una de
+  sus apariciones en los estimadores del bosque, también es un método
+  bastante efectivo, pero algo más complejo de implementar e
+  interpretar.
+
+  En el archivo \texttt{RF\_feature-importance.ipynb} se encuentra el
+  código utilizado para esta demostración, por si se quieren consultar
+  más detalles o probar variantes.
 \end{document}
