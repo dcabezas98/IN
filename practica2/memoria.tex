@@ -647,6 +647,42 @@ fin de semana.
 Fijando estos valores, nos quedamos con 4143 instancias, por lo que
 nuestros algoritmos se ejecutarán bastante rápido.
 
+Anticipando problemas posteriores, debemos eliminar los outliers para
+poder visualizar la segmentación correctamente. Utilizando
+\texttt{Counter} observamos que hay un accidente con 52 víctimas, esto
+distorsiona las escalas de los ejes en las gráficas de víctimas y
+heridos, lo que dificulta su interpretación.
+
+Por tanto, eliminamos los outliers con el siguiente código, que
+colapsa los valores por encima del máximo de la whisker box, que
+admite hasta la media más 3 por la desviación típica
+($\mu+3\cdot\sigma$), en dicho máximo. 
+
+\begin{verbatim}
+# Eliminar outliers, ya que distorsionan las gráficas
+for a in atributos:
+    if a in {'TOT_MUERTOS','TOT_HERIDOS_GRAVES'}:
+        continue
+    d=data[a][abs(zscore(data[a]))<3]
+    data[a][zscore(data[a])<-3]=d.min()
+    data[a][zscore(data[a])>3]=d.max()
+\end{verbatim}
+
+La gran mayoría de accidentes no presenta muertos ni heridos graves,
+lo que provoca que los muertos y heridos graves se consideren
+outliers, por eso los dejamos tal y como están. En la siguiente
+gráfica podemos comparar las distribuciones de las variables, se
+elminan la mayoría de outliers y se regula la escala de los ejes,
+salvo en los dos atributos que no hemos modificado.
+
+\begin{figure}[H]
+  \centering
+  \subfigure[Antes de eliminar outliers.]{\includegraphics[width=160mm]{figures/accidentes/outliers1}}
+  \subfigure[Tras eliminar outliers.]{\includegraphics[width=160mm]{figures/accidentes/outliers2}}
+  \caption{Distribución de los valores de cada variable.}
+  \label{fig:ward1-scores}
+\end{figure}
+
 \subsection{Algoritmos de clustering y resultados}
 
 El primer algoritmo que probaremos para abordar este problema es
@@ -757,6 +793,31 @@ Silhouette crece prácticamente de forma lineal. Tomaremos $K=6$, ya
 que la ganancia en la métrica de Calinski es significativa y así
 tendremos la oportunidad de analizar un agrupamiento con un número de
 clusters algo mayor.
+
+El siguiente código realiza el agrupamiento y obtiene las etiquetas
+(el cluster al que pertenece cada ejemplo).
+
+\begin{verbatim}
+K=6
+results = AgglomerativeClustering(distance_threshold=None, n_clusters=K).fit(data_norm)
+labels=results.labels_
+\end{verbatim}
+
+Este algoritmo no devuelve los centroides, para calcularlos agrupamos
+los datos por etiqueta y hacemos la media de cada atributo.
+
+\begin{verbatim}
+dataC=data.copy()
+dataC['cluster']=labels
+centroids = dataC.groupby('cluster').mean()
+\end{verbatim}
+
+Vemos que hay diferentes tamaños de cluster.
+
+\begin{verbatim}
+Counter(labels)
+> Counter({0: 1493, 1: 549, 2: 1535, 3: 140, 4: 264, 5: 162})
+\end{verbatim}
 
 \subsection{Interpretación de la
   segmentación} \label{sec:interpretacion1}
