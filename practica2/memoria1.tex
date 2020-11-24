@@ -64,10 +64,14 @@
 \begin{document}
 \maketitle
 \newpage
+\begin{center}
+\vspace*{8cm}
+{\Huge \textbf{Visualización}}
+\end{center}
+\newpage
 \tableofcontents
 \newpage
 
-\section{Visualización}
 Sobre los resultados de la práctica 1, realizaremos representaciones
 de los scores obtenidos por cada algoritmo para cada
 preprocesamiento. No nos centraremos en por qué unos modelos o
@@ -77,12 +81,12 @@ práctica anterior. Nos centraremos cómo podemos interpretar las
 visualizaciones para ayudarnos a distinguir qué algoritmo o
 procesamiento es más adecuado en cada caso.
 
-\subsection{Visualización de medidas}
+\section{Visualización de medidas}
 Compararemos los scores de todos los modelos para cada
 preprocesamiento y viceversa. Las métricas que representaremos son la
 Accuracy y el F1-score.
 
-\subsubsection{Por procesamiento}
+\subsection{Por procesamiento}
 
 El \textbf{primer procesamiento} consiste en \textbf{eliminar las
   instancias con valores perdidos}.
@@ -194,7 +198,7 @@ columna sube hasta acabar ligeramente por encima del resto. También
 observamos una subida notable en el desempeño de KNN, cuya barra
 adelanta a la de Random Forest.
 
-\subsubsection{Por modelo}
+\subsection{Por modelo}
 
 \begin{figure}[H]
   \centering
@@ -302,7 +306,7 @@ información que se pierde con esta simplificación. Los preprocesados
 de binarización y estandarización le benefician en gran medida. En
 general, su eficacia es similar en ejemplos positivos y negativos, las barras azul y naranja están prácticamente a la misma altura.
 
-\subsection{Gráficas de la curva ROC}
+\section{Gráficas de la curva ROC}
 
 Para cada preprocesamiento, compararemos los modelos representándolos
 en el espacio ROC. Los estamos tratando como modelos discretos (sólo
@@ -379,7 +383,9 @@ ROC para el resto de preprocesamientos.
   \caption{Algoritmos sobre cada preprocesado representados en el espacio ROC}
 \end{figure}
 
-\subsection{Análisis de atributos}
+\newpage
+
+\section{Análisis de atributos}
 
 Para cada atributo, representamos para cada posible valor el número de
 instancias positivas (en azul) y negativas (en naranja). Utilizamos un
@@ -392,7 +398,7 @@ que tener en cuenta donde empieza la barra.
 \begin{figure}[H]
   \centering
   \caption{Distribución de ejemplos de cada clase para los distintos valores de BI-RADS}
-  \includegraphics[width=120mm]{figures/visualizacion/birads}
+  \includegraphics[width=140mm]{figures/visualizacion/birads}
   \label{fig:birads}
 \end{figure}
 
@@ -428,7 +434,7 @@ tanto, no parece que esta variable influya en la severidad del tumor.
 \begin{figure}[H]
   \centering
   \caption{Distribución de ejemplos de cada clase para los distintos valores de Margin}
-  \includegraphics[width=120mm]{figures/visualizacion/margin}
+  \includegraphics[width=115mm]{figures/visualizacion/margin}
   \label{fig:margin}
 \end{figure}
 
@@ -441,7 +447,7 @@ atributo sí puede aportarnos información sobre la severidad del tumor.
 \begin{figure}[H]
   \centering
   \caption{Distribución de ejemplos de cada clase para los distintos valores de Shape}
-  \includegraphics[width=120mm]{figures/visualizacion/shape}
+  \includegraphics[width=115mm]{figures/visualizacion/shape}
   \label{fig:shape}
 \end{figure}
 
@@ -451,9 +457,5 @@ presentan los valores O o R de esta variable, corresponden a
 benignos. Mientras que hay aproximadamente las mismas instancias
 benignas que malignas entre las que tienen valor L. Por tanto, esta
 variable también está relacionada con la severidad.
-
-\newpage
-
-\section{Segmentación}
 
 \end{document}
