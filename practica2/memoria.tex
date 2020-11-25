@@ -544,7 +544,13 @@ métricas para interpretar la bondad de un agrupamiento:
   generar un número excesivo de clusters con el fin de maximizar las
   métricas al precio de dificultar el análisis y la interpretabilidad
   sería el equivalente a lo que en aprendizaje supervisado conocíamos
-  como sobreajuste, podemos llamarle también de ese modo.
+  como sobreajuste, podemos llamarle también de ese
+  modo. Representaremos los scores frente al número de cluster en
+  gráficas y elegiremos los hiperparámetros por un criterio similar al
+  \href{https://en.wikipedia.org/wiki/Elbow_method_%28clustering%29}
+    {método del codo}, a partir de la gráfica intentaremos determinar
+    cuando la ganancia de score deja de compensar el aumento en el
+    número de clusters.
 
   Debido al elevado número de datos, los algoritmos de clustering (que
   suelen presentar un elevado orden de complejidad) podrían tardar un
@@ -559,9 +565,12 @@ métricas para interpretar la bondad de un agrupamiento:
 
   Existe una amplia variedad de casos de estudio con sentido e interés
   que podríamos analizar: accidentes bajo condiciones climatológicas
-  adversas, en zonas urbanas, atropellos, etc. Nosotros analizaremos
-  los accidentes en condiciones óptimas para la conducción y los
-  accidentes que ocurren a altas horas de la madrugada.
+  adversas frente a buen tiempo, en zonas urbanas frente a
+  interurbanas, atropellos, colisiones, etc. Nosotros analizaremos los
+  accidentes en condiciones óptimas para la conducción
+  % TODO frente a accidentes en condiciones adversas
+  y los accidentes que ocurren a altas horas de la madrugada.
+  % TODO frente a los que ocurren por la tarde a horas ``comunes'' para la conducción.
 
   Es importante normalizar los datos (reescalarlos por columnas para
   que estén en el intervalo $[0,1]$ antes de realizar la segmentación
@@ -581,23 +590,25 @@ métricas para interpretar la bondad de un agrupamiento:
   desnormalizados para su visualización y cambios en las paletas de
   colores para hacer las visualizaciones más fácilmente interpretables.
   
-\section{Caso de estudio 1: Análisis de los accidentes en condiciones óptimas para la conducción}
+  \section{Caso de estudio 1: Análisis de los accidentes en
+    condiciones óptimas para la conducción}%TODO frente a los ocurridos en condiciones adversas}
 
-El primer caso de estudio seleccionaremos los accidentes que ocurren
-en condiciones óptimas para la conducción. Estos accidentes pueden
-ocurrir bien por factor vehículo o bien por factor humano, ya que
-eliminaremos el factor vía seleccionando ejemplos de accidentes que
-ocurren en calzadas secas y limpias. No disponemos de datos relativos
-al factor vehículo, pero dentro del factor humano, eliminaremos
-también las condiciones que favorecen los errores humanos como la
-falta de luminosidad, visibilidad o la circulación densa. Teniendo en
-cuenta que el factor vehículo es causa de un porcentaje relativamente
-bajo de accidentes (menos del 10\%), principalmente tenemos accidentes
-debidos al factor humano que han ocurrido en condiciones óptimas para
-la conducción: buen tiempo, buena visibilidad, calzada limpia y seca,
-tráfico fluido, etc. Es decir, accidentes debidos a factor humano que
-se podrían haber evitado. Aquí radica el interés de este caso de
-estudio.
+  % TODOPara la primera clase que compararemos en este primer caso de estudio
+  Para este primer caso de estudio, seleccionamos los accidentes que
+  ocurren en condiciones óptimas para la conducción. Estos accidentes
+  pueden ocurrir bien por factor vehículo o bien por factor humano, ya
+  que eliminaremos el factor vía seleccionando ejemplos de accidentes
+  que ocurren en calzadas secas y limpias. No disponemos de datos
+  relativos al factor vehículo, pero dentro del factor humano,
+  eliminaremos también las condiciones que favorecen los errores
+  humanos como la falta de luminosidad, visibilidad o la circulación
+  densa. Teniendo en cuenta que el factor vehículo es causa de un
+  porcentaje relativamente bajo de accidentes (menos del 10\%),
+  principalmente tenemos accidentes debidos al factor humano que han
+  ocurrido en condiciones óptimas para la conducción: buen tiempo,
+  buena visibilidad, calzada limpia y seca, tráfico fluido, etc. Es
+  decir, accidentes debidos a factor humano que se podrían haber
+  evitado. Aquí radica el interés de este caso de estudio.
 
 En concreto, estos son los valores que fijamos para las variables:
 
@@ -656,7 +667,7 @@ heridos, lo que dificulta su interpretación.
 Por tanto, eliminamos los outliers con el siguiente código, que
 colapsa los valores por encima del máximo de la whisker box, que
 admite hasta la media más 3 por la desviación típica
-($\mu+3\cdot\sigma$), en dicho máximo. 
+($\mu+3\cdot\sigma$), en dicho máximo.
 
 \begin{verbatim}
 # Eliminar outliers, ya que distorsionan las gráficas
@@ -821,6 +832,179 @@ Counter(labels)
 
 \subsection{Interpretación de la
   segmentación} \label{sec:interpretacion1}
+
+Comenzaremos por el agrupamiento generado por el algoritmo
+K-means. Visualizamos los centroides con la función
+\texttt{visualize\_centroids} del fichero \texttt{pract2\_utils.py}.
+Visualizamos también cómo se distribuyen los valores de las variables
+en cada cluster.
+
+Visualizar los centroides nos da una idea del tipo de accidentes en
+cada cluster, pero visualizar la distribución de las variables en un
+diagrama de cajas y bigotes nos proporciona más información. Porque
+podemos saber cómo de cerca están los elementos del cluster de ese
+centroide. Si vemos una sola línea, significa que la mayoría de
+elementos del cluster tienen ese valor, los suficientes para
+considerar el resto como outliers.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=120mm]{figures/accidentes/k-means1centroids}
+  \caption{Centroides de los clusters generados por K-means.}
+  \label{fig:k-means1centroids}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=120mm]{figures/accidentes/k-means1distribution}
+  \caption{Distribución de las variables en los clusters generados por
+    K-means.}
+  \label{fig:k-means1distribution}
+\end{figure}
+
+Tenemos el cluster 0, que agrupa los accidentes con 3 o más víctimas,
+la mayoría de las cuales son heridos leves. Generalmente son
+accidentes con dos vehículos implicados, aunque en la Figura
+\ref{fig:k-means1centroids} apreciamos que debe haber algunos
+accidentes con un sólo vehículo implicado (la media es ligeramente
+menor a 2), pero la Figura \ref{fig:k-means1distribution} vemos que
+estos casos constituyen un porcentaje tan bajo que los considera
+outliers. Los elementos de este cluster probablemente representen en
+su mayoría choques frontales/laterales de vehículos, que suelen ser
+los que más víctimas ocasionan.
+
+En el cluster 1, tenemos accidentes con generalmente una vícitma (que
+acostrumbra a ser leve) y un vehículo implicado. Podrían tratarse, por
+ejemplo, de choques de un solo vehículo con un obstáculo, generalmente
+con un sólo conductor y leves. En la Figura
+\ref{fig:k-means1distribution} apreciamos que en algunas ocasiones
+(outliers) hay más heridos o de mayor gravedad, pero en el caso de los
+vehículos implicados únicamente hay accidentes con un vehículo
+implicado.
+
+Por último, el cluster 2 agrupa accidentes con dos vehículos
+implicados pero con bajo número de víctimas y generalmente
+leves. Pueden tratarse en su mayoría de colisiones por alcance, que
+acostumbran a ser más leves que el resto de colisiones. Aunque la
+Figura \ref{fig:k-means1centroids} nos dice que deben existir en este
+cluster accidentes don más de dos vehículos implicados (la media es
+ligeramente mayor que 2), en la Figura \ref{fig:k-means1distribution}
+observamos que son una minoría (los considera outliers).
+
+Debemos resaltar que la proporción de muertos y heridos leves es
+demasiado baja como para que se consideren a la hora de agrupar por
+los datos, en la Figura \ref{fig:k-means1distribution} observamos que
+los valores distintos de 0 para estas dos variables los considera
+outliers. Nos surge aquí la siguiente duda que tendremos la
+oportunidad de responder más adelante: ¿Al aumentar el número de
+clusters tendrá en cuenta los valores de estas variables para agrupar?
+En caso afirmativo, ¿a partir de qué número de clusters? ¿merecerá la
+pena aumentar el número de cluster o esto provocará también que se
+``fuerce la separación'' de clústers que tiene perfecto sentido
+fusionar? Lo que sería sobreajuste.
+
+Podemos también visualizar los cluster en un \textit{pairplot} para
+observar la relación entre las variables dos a dos, así como la
+distribución de los valores de las variables en cada cluster.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=180mm]{figures/accidentes/k-means1pair}
+  \caption{Distribución de las variables en los clusters generados por
+    K-means, por pares.}
+  \label{fig:k-means1pair}
+\end{figure}
+
+En las diagonales, observamos las distribuciones para cada cluster de
+los valores del atributo correspondiente. Por ejemplo en los heridos
+leves y en el núemero de víctimas observamos que el cluster 0 llega a
+tomar valores más altos (la distribución está más a la derecha),
+mientras que en los otros dos clústers hay poca diferencia, el cluster
+2 (verde) toma el valor 2 con ligeramente más frecuencia. Si
+observamos los muertos, concluimos que esta variable no nos ayuda a
+diferenciar los clusters, porque todos tienen su distribución
+prácticamente degenerada en 0. Si observamos en la diagonal los
+vehículos implicados, vemos que no aparece el cluster 1 por tomar
+todos sus elementos el valor 1 para esta variable, lo que hace que la
+``línea'' tenga grosor 0. Esto nos lo advierte un warning (Dataset has
+0 variance; skipping density estimate) al generar el gráfico. El
+principal problema de este tipo de gráfico es que se representan
+cantidades absolutas, por lo que al existir algunos cluster más
+grandes que otros, se distorsionan las gráficas, por ejemplo el
+cluster 0 (azul) es menos numeroso y cuesta distinguir su
+distribución. Otro problema de este tipo de gráficos es que
+acostumbrarn a solaparse las gráficas de varias distribuciones, por lo
+que son muy difíciles de interpretar si el número de clusters es
+elevado.
+
+Fuera de la diagonal, representamos en la posición $(i,j)$ la relación
+entre los valores de los atributos $i$ y $j$ (de ahí el nombre de
+\textit{pairplot}), por lo que el gráfico es simétrico salvo cambiar
+los ejes. Los problemas de estas representaciones son dos. El primero
+es que los puntos se tapan unos a otros: por ejemplo en la esquina
+inferior izquierda vemos un punto naranja (cluster 1) representando un
+accidente con 1 víctima y un vehículo implicado, pero esto no quiere
+decir que en los cluster 0 y 2 no puedan existir dichos casos, sólo
+que son más frecuentes en el cluster 1 (en proporción dentro del
+propio cluster, si no los cluster más pequeños no aparecerían nunca),
+pero no sabemos si mucho más frecuentes o sólo un poco más frecuentes
+que en el resto de clusters, el gráfico no nos dice si el punto es
+``claramente naranja'' o ha quedado a unos pocos ejemplos de ser
+dibujado en otro color. El segundo problema es que no tiene en cuenta
+las densidades en cada punto: por ejemplo en la comparación entre los
+heridos leves y las víctimas aparece un punto azul indicando que al
+menos hay un accidente con 5 víctimas y 0 heridos leves, y un punto
+verde indicando que hay accidentes con una víctima y un herido
+leve. Este último caso es mucho más frecuente, pero esto el gráfico no
+lo refleja, sólo refleja que al menos hay un accidente con esos
+valores. Por tanto, estos gŕaficos no reflejan correctamente las
+relaciones entre los atributos.
+
+Tras explicar cómo se interpretan este tipo de gráficos y exponer sus
+inconvenientes, basaremos los futuros análisis en gráficos como las
+figuras \ref{fig:k-means1centroids} y \ref{fig:k-means1distribution},
+más fácilmente interpretables.
+
+Ahora pasemos a la segmentación obtenida con el algoritmo aglomerativo
+\textbf{Ward}, hemos seleccionado 6 clusters.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=120mm]{figures/accidentes/ward1centroids}
+  \caption{Centroides de los clusters generados por Ward.}
+  \label{fig:ward1centroids}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=120mm]{figures/accidentes/ward1distribution}
+  \caption{Distribución de las variables en los clusters generados por
+    Ward.}
+  \label{fig:ward1distribution}
+\end{figure}
+
+Comprobamos que tampoco utiliza los muertos ni los heridos graves para
+agrupar los clusters. Sí que hay algunas diferencias entre los valores
+de estas variables en cada cluster, pero la inmensa mayoría presentan
+el valor 0 y los considera como outliers (dentro del cluster).
+
+Cada par de clusters se diferencian significativamente en el valor de
+al menos una variable. Por ejemplo, los clusters 0 y 2 son muy
+similares en cuanto a la distribución de valores de los atributos en
+todas las variables salvo el total de vehículos implicados. Ambos
+podrían costar de choques leves, pero los accidentes del cluster 2 (2
+vehículos implicados) serían choques entre vehículos y los del cluster
+0 (1 vehículo implicado) serían choques con obstáculos.
+
+En la Figura \ref{fig:k-means1distribution} vimos que, exceptuando las
+víctimas y heridos leves del cluster 0, cada atributo de cada cluster
+presenta una distribución muy concentrada (sólo vemos una línea y
+algunos puntos sueltos que considera outliers). En esta ocasión, los
+atributos total de víctimas y total de heridos leves en los clusters
+1, 3, 4 y 5 presentan distribuciones con rangos de valores más
+amplios, ya que estos clusters son más pequeños y concentran
+accidentes con diferentes rangos de valores de estas variables, no
+centrados (de forma casi degenerada) en el valor 1. 
 
 \section{Caso de estudio 2: Análisis de los accidentes a altas horas de la madrugada}
 
