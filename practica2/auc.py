@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 models=["Dummy","DecisionTree","GaussianNB","SupportVectorM","RandomForest","KNN","NeuralNetwork"]
 
@@ -18,16 +17,16 @@ fpr4=[1.0,0.1012,0.2447,0.3129,0.2,0.2212,0.2071]
 tpr5=[1.0,0.77,0.885,0.86,0.8175,0.82,0.8325]
 fpr5=[1.0,0.1012,0.2447,0.1741,0.2024,0.1624,0.1647]
 
-TPR=tpr1
-FPR=fpr1
+TPR=[tpr1,tpr2,tpr3,tpr4,tpr5]
+FPR=[fpr1,fpr2,fpr3,fpr4,fpr5]
 
-for i, (x,y) in enumerate(zip(FPR,TPR)):
-    print(x,y)
-    plt.plot(x,y, 'o', label=models[i])
-    #plt.plot([0,x,1],[0,y,1], 'o-', label=models[i]) # Unir con (0,0) y (1,1)
-    
-plt.legend(loc='lower right')
-plt.axis([0,1,0,1])
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.show()
+print(' & '.join(['']+models)+' \\\\ \\hline')
+for p in range(len(TPR)):
+      row='Preprocesado '+str(p)+' & '
+      tpr=np.array(TPR[p])
+      fpr=np.array(FPR[p])
+      auc=(1+tpr-fpr)/2
+      auc=list(map(lambda x: round(x,4),auc))
+      auc=list(map(str,auc))
+      row=row+' & '.join(auc)+' \\\\ \\hline'
+      print(row)

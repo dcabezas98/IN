@@ -310,10 +310,10 @@ general, su eficacia es similar en ejemplos positivos y negativos, las barras az
 Para cada preprocesamiento, compararemos los modelos representándolos
 en el espacio ROC. Los estamos tratando como modelos discretos (sólo
 atendemos a la clase que predigan, no la probabilidad que asignen de
-pertenencia a cada clase), por lo que no vamos a dibujar sus curva ROC
-como es habitual verlas, con forma de codo. Esto podríamos hacerlo con
-la función \texttt{roc\_curve} de \texttt{sklearn.metrics}, pero
-tenemos que tener claro la interpretación continua que se hace del
+pertenencia a cada clase), por lo que no vamos a dibujar sus curvas
+ROC como es habitual verlas, con forma de codo. Esto podríamos hacerlo
+con la función \texttt{roc\_curve} de \texttt{sklearn.metrics}, pero
+tenemos que tener clara la interpretación continua que se hace del
 modelo para interpretar las curvas. Por ejemplo un árbol de decisión
 se puede interpretar como un modelo continuo de la siguiente manera:
 si una instancia cae sobre una hoja con $p$ instancias de
@@ -326,8 +326,7 @@ concretamente en el intervalo $[0,1]\times[0,1]$.
 
 El análisis gráfico por gráfico sería muy repetitivo, por lo que nos
 limitaremos a explicar cómo se interpretan estos gráficos. Lo haremos
-sobre el primero de ellos.
-
+sobre el primero de ellos. \vspace{-3mm}
 \begin{figure}[H]
   \centering
   \caption{Algoritmos sobre el preprocesado 1 representados en el espacio ROC}
@@ -380,7 +379,46 @@ ROC para el resto de preprocesamientos.
     \includegraphics[width=85mm]{figures/visualizacion/roc4}
   }
   \caption{Algoritmos sobre cada preprocesado representados en el espacio ROC}
+  \label{fig:roc2345}
 \end{figure}
+
+La métrica $AUC=\dfrac{1+TPR-FPR}{2}$ mide el área bajo la curva que
+une el punto en el espacio con los puntos $(0,0)$ y $(1,1)$. En la
+Figura \ref{fig:roc-auc} pueden observarse estas curvas para los
+algoritmos con el preprocesamiento 1 (los de la Figura
+\ref{fig:roc1}). Clarametente cuanto más arriba y a la izquierda esté
+un punto, mayor será este área y por tanto la AUC del modelo. Esta
+métrica es similar a Accuracy en el sentido que mide el desemepeño
+general del modelo sin priorizar ninguna de las dos clases
+(positiva/negativa), con la diferencia de que equilibra la importancia
+de las clases sin importar lo balanceadas que estén, por tanto es
+recomendable utilizar AUC cuando tenemos clases desbalanceadas y
+queremos evitar que se ignore/desprecie la clase minoritaria.
+
+En la Tabla \ref{tab:auc}, recogemos los distintos valores de este
+área para los modelos sobre el preprocesado 1 (Figura \ref{fig:roc1} o
+Figura \ref{fig:roc-auc}) y también sobre el resto de preprocesamientos (Figura \ref{fig:roc2345}).
+
+\begin{figure}[H]
+  \centering
+  \caption{Curvas ROC de los algoritmos sobre el preprocesado 1}
+  \includegraphics[width=120mm]{figures/visualizacion/roc-auc}
+  \label{fig:roc-auc}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|l|ccccccc|} \hline
+     & Dummy & DecisionTree & GaussianNB & SupportVectorM & RandomForest & KNN & NeuralNetwork \\ \hline
+Preprocesado 0 & 0.5 & 0.832 & 0.8262 & 0.7219 & 0.8108 & 0.7954 & 0.8118 \\ \hline
+Preprocesado 1 & 0.5 & 0.8224 & 0.8204 & 0.704 & 0.7925 & 0.8001 & 0.8086 \\ \hline
+Preprocesado 2 & 0.5 & 0.8333 & 0.8408 & 0.7218 & 0.8072 & 0.7922 & 0.8014 \\ \hline
+Preprocesado 3 & 0.5 & 0.8344 & 0.8202 & 0.691 & 0.8062 & 0.8006 & 0.824 \\ \hline
+Preprocesado 4 & 0.5 & 0.8344 & 0.8202 & 0.843 & 0.8076 & 0.8288 & 0.8339 \\ \hline
+  \end{tabular}
+  \caption{AUC de cada modelo y procesamiento}
+  \label{tab:auc}
+\end{table}
 
 \newpage
 
@@ -567,10 +605,10 @@ métricas para interpretar la bondad de un agrupamiento:
   que podríamos analizar: accidentes bajo condiciones climatológicas
   adversas frente a buen tiempo, en zonas urbanas frente a
   interurbanas, atropellos, colisiones, etc. Nosotros analizaremos los
-  accidentes en condiciones óptimas para la conducción
-  % TODO frente a accidentes en condiciones adversas
-  y los accidentes que ocurren a altas horas de la madrugada.
-  % TODO frente a los que ocurren por la tarde a horas ``comunes'' para la conducción.
+  accidentes en condiciones óptimas para la conducción y los
+  accidentes que ocurren a altas horas de la madrugada. En cada caso
+  de estudio, realizaremos segmentación con dos algoritmos, K-means y
+  uno de los otros.
 
   Es importante normalizar los datos (reescalarlos por columnas para
   que estén en el intervalo $[0,1]$ antes de realizar la segmentación
@@ -581,19 +619,19 @@ métricas para interpretar la bondad de un agrupamiento:
   de \textit{sklearn}.
 
   Para ciertas tareas como el cálulo de las métricas y la
-  visualización de los centroides y las distribuciones de los
-  clusters, utilizamos las funciones que se nos proporcionan en el
-  fichero \texttt{pract2\_utils.py}, que internamente utiliza
-  \textit{skleran} para las métricas y \textit{seaborn} para las
-  visualizaciones. Hemos relizado pequeñas modificaciones en este
-  fichero: la posibilidad de introducir los centroides ya
-  desnormalizados para su visualización y cambios en las paletas de
-  colores para hacer las visualizaciones más fácilmente interpretables.
+  visualización de los centroides y las distribuciones por pares de
+  atributos en los clusters, utilizamos las funciones que se nos
+  proporcionan en el fichero \texttt{pract2\_utils.py}, que
+  internamente utiliza \textit{skleran} para las métricas y
+  \textit{seaborn} para las visualizaciones. Hemos relizado pequeñas
+  modificaciones en este fichero: la posibilidad de introducir los
+  centroides ya desnormalizados para su visualización y cambios en las
+  paletas de colores para hacer las visualizaciones más fácilmente
+  interpretables.
   
   \section{Caso de estudio 1: Análisis de los accidentes en
-    condiciones óptimas para la conducción}%TODO frente a los ocurridos en condiciones adversas}
+    condiciones óptimas para la conducción}
 
-  % TODOPara la primera clase que compararemos en este primer caso de estudio
   Para este primer caso de estudio, seleccionamos los accidentes que
   ocurren en condiciones óptimas para la conducción. Estos accidentes
   pueden ocurrir bien por factor vehículo o bien por factor humano, ya
@@ -778,15 +816,14 @@ experimento análogo al de la Tabla \ref{tab:k-means1}. Obteniendo:
 \begin{tabular}{|c|cc|}
   \hline
   ~\hspace{2mm}K\hspace{2mm}~ & ~\hspace{2mm}Calinski\hspace{2mm}~ & ~\hspace{2mm}Silhouette\hspace{2mm}~ \\ \hline
-2 & 3042.33 & 0.5541 \\ \hline
-3 & 4703.28 & 0.6437 \\ \hline
-4 & 4136.87 & 0.6577 \\ \hline
-5 & 4038.97 & 0.6892 \\ \hline
-6 & 3853.22 & 0.7027 \\ \hline
-7 & 4151.42 & 0.7369 \\ \hline
-8 & 4226.28 & 0.7867 \\ \hline
-9 & 4805.5 & 0.8417 \\ \hline
-\end{tabular}
+2 & 3038.94 & 0.5539 \\ \hline
+3 & 3263.5 & 0.6002 \\ \hline
+4 & 3211.22 & 0.6236 \\ \hline
+5 & 3504.66 & 0.6674 \\ \hline
+6 & 3925.91 & 0.715 \\ \hline
+7 & 3951.38 & 0.7541 \\ \hline
+8 & 4090.58 & 0.7905 \\ \hline
+9 & 4256.87 & 0.8254 \\ \hline\end{tabular}
 \caption{Scores de Ward para distinto número de clusters.}
 \label{tab:ward1}
 \end{table}
@@ -856,11 +893,12 @@ considerar el resto como outliers.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=120mm]{figures/accidentes/k-means1distribution}
+  \includegraphics[width=130mm]{figures/accidentes/k-means1distribution}
   \caption{Distribución de las variables en los clusters generados por
     K-means.}
   \label{fig:k-means1distribution}
 \end{figure}
+
 
 Tenemos el cluster 0, que agrupa los accidentes con 3 o más víctimas,
 la mayoría de las cuales son heridos leves. Generalmente son
@@ -874,7 +912,7 @@ su mayoría choques frontales/laterales de vehículos, que suelen ser
 los que más víctimas ocasionan.
 
 En el cluster 1, tenemos accidentes con generalmente una vícitma (que
-acostrumbra a ser leve) y un vehículo implicado. Podrían tratarse, por
+acostumbra a ser leve) y un vehículo implicado. Podrían tratarse, por
 ejemplo, de choques de un solo vehículo con un obstáculo, generalmente
 con un sólo conductor y leves. En la Figura
 \ref{fig:k-means1distribution} apreciamos que en algunas ocasiones
@@ -890,6 +928,15 @@ Figura \ref{fig:k-means1centroids} nos dice que deben existir en este
 cluster accidentes don más de dos vehículos implicados (la media es
 ligeramente mayor que 2), en la Figura \ref{fig:k-means1distribution}
 observamos que son una minoría (los considera outliers).
+
+Atendiendo al tamaño de los clusters, observamos que los accidentes
+leves con dos vehículos implicados son los más comunes (cluster 2,
+$\sim$49.5\%), le siguen los accidentes leves con un vehículo
+implicado (cluster 1, $\sim$40.4\%). Y por último, los accidentes con
+un mayor número de víctimas y generalmente dos vehículos implicados
+(cluster 0, $\sim$10.1\%). Así nos hacemos una idea de la frecuencia
+de cada tipo de accidente en las condiciones descritas en el caso de
+estudio.
 
 Debemos resaltar que la proporción de muertos y heridos leves es
 demasiado baja como para que se consideren a la hora de agrupar por
@@ -977,7 +1024,7 @@ Ahora pasemos a la segmentación obtenida con el algoritmo aglomerativo
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=120mm]{figures/accidentes/ward1distribution}
+  \includegraphics[width=125mm]{figures/accidentes/ward1distribution}
   \caption{Distribución de las variables en los clusters generados por
     Ward.}
   \label{fig:ward1distribution}
@@ -986,7 +1033,14 @@ Ahora pasemos a la segmentación obtenida con el algoritmo aglomerativo
 Comprobamos que tampoco utiliza los muertos ni los heridos graves para
 agrupar los clusters. Sí que hay algunas diferencias entre los valores
 de estas variables en cada cluster, pero la inmensa mayoría presentan
-el valor 0 y los considera como outliers (dentro del cluster).
+el valor 0 y los considera como outliers (dentro del cluster). Por
+tanto el número de cluster necesarios para tener una distinción en
+estos atributos será mayor que 6 (al menos con este algoritmo). El
+problema de esto es que los poco muertos y heridos graves se reparten
+entre todos los clusters, aparecen algunos dentro de los clusters de
+accidentes ``leves'' (con pocas víctimas, clusters 0 y 2), tratándose
+claramente de excepciones e impurezas en la segmentación, lo que
+también ocurre en el anterior agrupamiento.
 
 Cada par de clusters se diferencian significativamente en el valor de
 al menos una variable. Por ejemplo, los clusters 0 y 2 son muy
@@ -1004,14 +1058,120 @@ atributos total de víctimas y total de heridos leves en los clusters
 1, 3, 4 y 5 presentan distribuciones con rangos de valores más
 amplios, ya que estos clusters son más pequeños y concentran
 accidentes con diferentes rangos de valores de estas variables, no
-centrados (de forma casi degenerada) en el valor 1. 
+centrados (de forma casi degenerada) en el valor 1.
 
-\section{Caso de estudio 2: Análisis de los accidentes a altas horas de la madrugada}
+Los clusters 1 y 4 son similares, contienen accidentes con dos o más
+víctimas, la mayoría (como en todos los clusters) heridos leves. Se
+diferencian principalmente en que los accidentes del cluster 1
+acostumbran a tener dos vehículos implicados (podrían tratarse
+colisiones entre vehículos con varios pasajeros de los cuales dos o
+más resultan heridos), mientras que absolutamente todos los accidentes
+del cluster 4 presentan un vehículo implicado (podrían tratarse de
+colisones con obstáculos con varios pasajeros en el vehículo de los
+cuales dos o más resultan heridos, y/o también atropellos múltiples).
+
+El cluster 3 concentra los accidente con mayor número de heridos,
+observamos que generalmente hay dos vehículos implicados, por lo que
+podrían tratarse de choques fuertes frontales y laterales, los más
+peligrosos.
+
+El cluster 5 agrupa accidentes con exactamente 3 vehículos
+implicados. Suelen presentar 1 o 2 víctimas, 3 en algunas ocasiones,
+como podemos ver en la Figura \ref{fig:ward1distribution} abajo
+(cluster 5) a la izquierda (total de víctimas). La mayoría de las
+víctimas son leves, como ocurre en todos los clusters.
+
+Además, teniendo en cuenta el tamaño de cada cluster observamos que
+los accidentes leves con uno o dos vehículos implicados (clusters 0,
+$\sim$36\% y 2, $\sim$37\% respectivamente) son los más comunes. Les
+siguen accidentes algo más graves con dos vehículos implicados
+(cluster 1, $\sim$13\%) o un solo vehículo implicado (cluster 4,
+$\sim$6.4\%). Después el cluster 5 ($\sim$4\%) con accidentes con 3
+vehículos implicados, y por último el cluster 3 ($\sim$3.4\%), con los
+accidentes con mayor número de víctimas. Así nos hacemos una idea de
+la frecuenca de cada tipo de accidente en las condiciones descritas en
+el caso de estudio.
+
+\textbf{Comparamos} finalmente \textbf{los scores de ambos
+  algoritmos}.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{|l|ccc|} \hline & Calinski & Silhouette & $K$ \\
+    \hline K-means & 4703.28 & 0.6437 & 3 \\ \hline Ward & 3925.91 &
+    0.715 & 6 \\ \hline
+  \end{tabular}
+  \caption{Métricas Silhouette y Calinski para ambos agrupamientos.}
+  \label{tab:comp-scores1}
+\end{table}
+
+K-means consigue mejor razón de Calinski, mientras que Ward consigue
+un coeficiente Silhouette más alto. Por tanto, no tenemos en terminos
+de score un claro ganador, aunque el agrupamiento que consigue K-means
+ha sido más fácilmente interpretable debido al menor número de
+clusters. El agrupamiento de Ward nos ha permitido formar grupos más
+concretos de accidentes, pero quizá en algunos casos sean demasiado
+concretos. Por ejemplo, los clusters 1, 2 y 3 constan de accidentes
+con ǵeneralmente dos vehículos implicados, el cluster 2 agrupa los más
+leves (menos heridos) y el cluster 3 los más graves (más heridos),
+mientras que el cluster 1 estaría ``entre el 2 y el 3'', accidentes
+graves pero no demasiado. Probablemente se podrían agrupar las
+instancias del cluster 1 representando accidentes más leves en el
+cluster 2 y fusionar el resto con el cluster 3, formando entonces un
+cluster para accidentes leves con dos vehículos implicados y otro para
+los más graves.
+
+Si entre los 6 cluster generados por Ward hubiese uno o más que
+agrupasen accidentes por muertos o heridos graves, sí que podría
+compensar este aumento en el número de clusters generado. Aunque en
+definitiva tenemos ya dos segmentaciones analizadas con distinto
+número de clusters, por lo que se podría consultar una u otra según si
+un problema requiere una segmentación con grupos más generales y
+heterogéneos o más concretos y homogéneos.
+
+\section{Caso de estudio 2: Análisis de los accidentes a altas horas
+  de la madrugada frente a los ocurridos en horas puntas}
+
+
 
 \subsection{Algoritmos de clustering y resultados}
 
 \href{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html}{\textbf{DBSCAN:}}
 
 \subsection{Interpretación de la segmentación}
+
+\section{Contenido adicional y contraste con otras clases}
+
+\subsection{Outliers y la poca importancia de los heridos graves y
+  muertos}
+TODO
+
+En los 4143 datos del caso de estudio 1 hay 92 muertos
+714 graves en total
+
+Genera impurezas en los clusters. Por ejemplo una sola víctima
+(colision con obstaculo o atropello) que muere o es grave nos lo mete con los leves (los que tienen pocas victimas)
+
+Problema surge al quitar outliers
+y normalizar
+
+3 formas:
+
+mas peso a estas variables (metrica customizada para
+algoritmos)
+
+no quitar outliers. de no haberlos quitado se hubiese
+reducido mucho la importancia del resto de variables respecto a graves y muertos al normalizar
+
+haber eliminado outliers en graves y muertos (los quitaba todos), pero
+con un valor más alto que 3, para que los maximos fuesen 2-3 en vez de
+4-5 y se le restase menos importancia al normalizar.
+
+Como contenido adicional (aunque lo incluiremos en esta sección)
+Resaltaremos que el problema de que no se haya agrupado por muertos y
+heridos graves se podría haber solucionado (al menos para K=6)
+
+\subsection{Estudio de variables circunstanciales y de tipo dentro de
+  los cluster}
 
 \end{document}
