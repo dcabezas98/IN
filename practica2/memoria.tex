@@ -523,7 +523,7 @@ Los algoritmos de clustering que utilizaremos son:
 \begin{itemize}
 \item \href{https://en.wikipedia.org/wiki/K-means_clustering}{\textbf{K-means:}} Un algoritmo iterativo basado en
   particionamiento. Es relativamente eficiente ($O(tkn)$ donde $n$ es
-  el número de datos, $k$ el de clústers y $t$ el de iteraciones) y
+  el número de datos, $k$ el de clusters y $t$ el de iteraciones) y
   suele alcanzar óptimos locales bastante buenos. Por otra parte, sólo
   trabaja bien cuando los datos son numéricos, necesita prefijar el
   número de clusters, sólo encuentra clusters esféricos y no lidia
@@ -532,15 +532,15 @@ Los algoritmos de clustering que utilizaremos son:
 \item
   \href{https://en.wikipedia.org/wiki/DBSCAN}{\textbf{DBSCAN:}}
   También basado en particionamiento. No necesita a priori el número
-  de clusters, en su lugar requiere el radio máximo de cada clúster y
+  de clusters, en su lugar requiere el radio máximo de cada cluster y
   el tamaño mínimo de los mismos. También es capaz de encontrar
   clusters con distintas formas y es robusto a datos ruidosos y
   outliers.
 
 \item \href{https://en.wikipedia.org/wiki/Ward%27s_method}
     {\textbf{Ward:}} Es un método aglomerativo, es decir, parte de un
-    clúster para cada elemento y fusiona los clusters que generen en
-    el agrupamiento con mínima varianza. Necesita el número de clúster
+    cluster para cada elemento y fusiona los clusters que generen en
+    el agrupamiento con mínima varianza. Necesita el número de cluster
     o una distancia límite a partir de la cual no fusiona dos
     clusters.
 \end{itemize}
@@ -724,15 +724,18 @@ gráfica podemos comparar las distribuciones de las variables, se
 elminan la mayoría de outliers y se regula la escala de los ejes,
 salvo en los dos atributos que no hemos modificado.
 
+Adelantando acontecimientos, esta limpieza de los datos presenta
+inconvenientes que discutimos en la Sección \ref{sec:outliers}.
+
 \begin{figure}[H]
   \centering
   \subfigure[Antes de eliminar outliers.]{\includegraphics[width=160mm]{figures/accidentes/outliers1}}
   \subfigure[Tras eliminar outliers.]{\includegraphics[width=160mm]{figures/accidentes/outliers2}}
   \caption{Distribución de los valores de cada variable.}
-  \label{fig:ward1-scores}
+  \label{fig:distrib1-outliers}
 \end{figure}
 
-\subsection{Algoritmos de clustering y resultados}
+\subsection{Algoritmos de clustering y resultados} \label{sec:alg1}
 
 El primer algoritmo que probaremos para abordar este problema es
 \textbf{K-means}, utilizaremos la
@@ -938,7 +941,7 @@ un mayor número de víctimas y generalmente dos vehículos implicados
 de cada tipo de accidente en las condiciones descritas en el caso de
 estudio.
 
-Debemos resaltar que la proporción de muertos y heridos leves es
+Debemos resaltar que la proporción de muertos y heridos graves es
 demasiado baja como para que se consideren a la hora de agrupar por
 los datos, en la Figura \ref{fig:k-means1distribution} observamos que
 los valores distintos de 0 para estas dos variables los considera
@@ -947,8 +950,10 @@ oportunidad de responder más adelante: ¿Al aumentar el número de
 clusters tendrá en cuenta los valores de estas variables para agrupar?
 En caso afirmativo, ¿a partir de qué número de clusters? ¿merecerá la
 pena aumentar el número de cluster o esto provocará también que se
-``fuerce la separación'' de clústers que tiene perfecto sentido
+``fuerce la separación'' de clusters que tiene perfecto sentido
 fusionar? Lo que sería sobreajuste.
+
+Los 4143 accidentes acumulan 92 muertos y 714 heridos graves.
 
 Podemos también visualizar los cluster en un \textit{pairplot} para
 observar la relación entre las variables dos a dos, así como la
@@ -966,7 +971,7 @@ En las diagonales, observamos las distribuciones para cada cluster de
 los valores del atributo correspondiente. Por ejemplo en los heridos
 leves y en el núemero de víctimas observamos que el cluster 0 llega a
 tomar valores más altos (la distribución está más a la derecha),
-mientras que en los otros dos clústers hay poca diferencia, el cluster
+mientras que en los otros dos clusters hay poca diferencia, el cluster
 2 (verde) toma el valor 2 con ligeramente más frecuencia. Si
 observamos los muertos, concluimos que esta variable no nos ayuda a
 diferenciar los clusters, porque todos tienen su distribución
@@ -1132,18 +1137,507 @@ heterogéneos o más concretos y homogéneos.
 \section{Caso de estudio 2: Análisis de los accidentes a altas horas
   de la madrugada frente a los ocurridos en horas puntas}
 
+Nuestro segundo caso de estudio contrastará accidentes según la hora a
+la que ocurren. En concreto distinguiremos dos clases de accidentes,
+los ocurridos a altas horas de la noche y los ocurridos en horas
+puntas. En el primer caso, tomamos accidentes ocurridos entre las 12
+de la noche y las 6 de la madrugada. Horas en las que la gente suele
+estar durmiendo, salvo transportistas de largas distancias
+(conductores de camiones y trailers, por ejemplo), personas que
+trabajan por la noche, personas que están en un viaje largo o que
+salen de ocio nocturno, entre otros. Cabe esperar que en la mayoría de
+estos accidentes (al menos los ocurridos a trabajadores) sólo vaya un
+ocupante en el vehículo, y también que el accidente sea causado por
+una distracción a causa del sueño o un exceso de confianza por la baja
+densidad del tráfico. Esta última causa, además permitiría a los
+conductores ``sentirse cómodos'' conduciendo a altas velocidades y
+podría traducirse en un aumento en la gravedad de los accidentes.
 
+En el segundo caso, tomaremos accidentes ocurridos en horas
+puntas. Para ello, observaremos la distribución de accidentes respecto
+a la hora en la que ocurren. Obtenemos este dato a partir del
+DataFrame combinando los métodos \texttt{groupby} y \texttt{count}, y
+consultando cualquier columna de la tabla:
+\begin{verbatim}
+n_accidentes=list(data.groupby('HORA').count().MES)
+\end{verbatim}
 
-\subsection{Algoritmos de clustering y resultados}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=120mm]{figures/accidentes/accidentes-hora}
+  \caption{Distribución de accidentes por horas.}
+  \label{fig:accidentes-hora}
+\end{figure}
 
-\href{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html}{\textbf{DBSCAN:}}
+Hay varias horas puntas en las que ocurren mayor cantidad de
+accidentes. Tomaremos dos horas puntas: las 14h (salida de los
+colegios) y las 20h (salida de turnos de tarde).
 
-\subsection{Interpretación de la segmentación}
+En el primer caso, tenemos 5969 instancias. Comprobamos con
+\texttt{Counter} que en esta ocasión hemos dejado fuera al accidente
+con 52 víctimas, por lo que las escalas de los ejes no están demasiado
+distorsionadas y no necesitamos limpiar los outliers (en la sección
+\ref{sec:outliers} discutimos las consecuencias de eliminarlos).
 
-\section{Contenido adicional y contraste con otras clases}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=160mm]{figures/accidentes/distrib-madrugada}
+  \caption{Distribución de las variables en los accidentes a altas horas de la madrugada.}
+  \label{fig:distrib-madrugada}
+\end{figure}
+
+En la segunda clase vuelve a aparecer el accidente con 52 víctimas, si
+realizasemos una limpieza de outliers similar a la del primer caso de
+estudio, tendríamos dificultades para comparar ambas clases por el
+motivo que comentamos en la Sección \ref{sec:outliers}. Por tanto, lo
+eliminamos con la siguiente línea de código:
+\begin{verbatim}
+data = data[data.TOT_VICTIMAS <=20]
+\end{verbatim}
+quedándonos con 6671 instancias. Observamos como varía la escala de
+los ejes sólo con eliminar esta instancia.
+
+\begin{figure}[H]
+  \centering
+  \subfigure[Antes de eliminar el outlier.]{\includegraphics[width=160mm]{figures/accidentes/outliers2-1}}
+  \subfigure[Tras eliminar el outlier.]{\includegraphics[width=160mm]{figures/accidentes/outliers2-2}}
+  \caption{Distribución de las variables en los accidentes a horas
+    puntas.}
+  \label{fig:distrib-puntas}
+\end{figure}
+
+\subsection{Accidentes a altas horas de la madrugada}
+
+\subsubsection{Algoritmos de clustering y resultados}
+
+De nuevo comenzamos agrupando con \textbf{K-means}, seguimos el mismo
+procedimiento que en la Sección \ref{sec:alg1} para determinar un
+valor de $K$ adecuado. Obtenemos los siguientes resultados:
+
+\begin{table}[H]
+  \centering
+\begin{tabular}{|c|cc|}
+  \hline
+  ~\hspace{2mm}K\hspace{2mm}~ & ~\hspace{2mm}Calinski\hspace{2mm}~ & ~\hspace{2mm}Silhouette\hspace{2mm}~ \\ \hline
+2 & 3023.23 & 0.5977 \\ \hline
+3 & 3620.77 & 0.6052 \\ \hline
+4 & 3403.01 & 0.56 \\ \hline
+5 & 3516.71 & 0.5981 \\ \hline
+6 & 3796.63 & 0.7136 \\ \hline
+7 & 3884.41 & 0.7199 \\ \hline
+8 & 3916.43 & 0.7376 \\ \hline
+9 & 4347.46 & 0.7777 \\ \hline
+\end{tabular}
+\caption{Scores de K-means para distinto número de clusters.}
+\label{tab:k-means2}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \subfigure[Razón de Calinski-Harabasz]{\includegraphics[width=87mm]{figures/accidentes/k-means2cal}}
+  \subfigure[Coeficiente Silhouette]{\includegraphics[width=87mm]{figures/accidentes/k-means2sil}}
+  \caption{Representaciones de los scores de K-means para distinto número de clusters.}
+  \label{fig:k-means2-scores}
+\end{figure}
+
+Observamos dos ganancias importantes de score, para $K=3$ en la razón
+de Calinski y para $K=6$ en el coeficiente Silhouette. Analizaremos
+los dos agrupamientos, pero no entraremos en tantos detalles como en
+el caso anterior y nos centraremos en clusters especialmente
+interesantes. Por ejemplo, si alguno agrupa accidentes por muertos y/o
+por heridos graves.
+
+Para $K=3$, obtenemos los siguientes tamaños de cluster:
+\begin{verbatim}
+Counter({0: 4652, 1: 717, 2: 600})
+\end{verbatim}
+
+Mientras que para $K=6$ obtenemos:
+\begin{verbatim}
+Counter({1: 2213, 5: 1399, 0: 1213, 4: 688, 2: 301, 3: 155})
+\end{verbatim}
+
+Esta vez el otro algoritmo que utilizaremos es
+\href{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html}{\textbf{DBSCAN}}. Los
+dos parámetros que debemos proporcionarle son el radio máximo
+(epsilon, $\varepsilon$) y el tamaño mínimo de cada cluster. En la
+documentación de \textit{sklearn} explica que $\varepsilon$ es el
+parámetro más influyente, por lo que fijaremos el tamaño mínimo a 50 y
+probaremos varios valores de $\varepsilon$ (Figura
+\ref{fig:dbscan1}). Observamos mucha diferencia entre los valores 0.1
+y 0.15 tanto en Silhouette como en el número de clusters, así que
+realizamos una segunda tanda de mediciones dentro de este intervalo.
+
+En la segunda tanda de mediciones, descartamos 0.1 y 0.11 por producir
+demasiados clusters. Los valores 0.12, 0.13 y 0.14 consiguen los
+mismos scores porque producen las mismas particiones, la métrica
+Calinski nos sugiere estos valores, pero tiene dos inconvenientes:
+Generan un particionamiento con 8 clusters (sin contar el -1) y no son
+capaces de agrupar 266 elementos (que los considera como ruidosos y
+los concentra en el cluster -1). Tomaremos $\varepsilon=0.15$ porque
+produce sólo 3 clusters y sólo desecha 183 instancias. 
+
+\begin{table}[H]
+  \centering
+\begin{tabular}{|c|ccc|}
+  \hline
+   ~\hspace{2mm}$\varepsilon$\hspace{2mm}~ & ~\hspace{2mm}K\hspace{2mm}~ & ~\hspace{2mm}Calinski\hspace{2mm}~ & ~\hspace{2mm}Silhouette\hspace{2mm}~ \\ \hline
+0.1 & 14 & 888.21 & 0.871 \\ \hline
+0.15 & 3 & 1053.3 & 0.535 \\ \hline
+0.2 & 4 & 848.14 & 0.5414 \\ \hline
+0.25 & 4 & 862.67 & 0.5417 \\ \hline
+0.3 & 2 & 358.65 & 0.526 \\ \hline
+0.35 & 1 & 189.82 & 0.7647 \\ \hline
+\end{tabular}
+\quad
+\begin{tabular}{|c|ccc|}
+  \hline
+   ~\hspace{2mm}$\varepsilon$\hspace{2mm}~ & ~\hspace{2mm}K\hspace{2mm}~ & ~\hspace{2mm}Calinski\hspace{2mm}~ & ~\hspace{2mm}Silhouette\hspace{2mm}~ \\ \hline
+0.1 & 14 & 888.21 & 0.871 \\ \hline
+0.11 & 14 & 888.21 & 0.871 \\ \hline
+0.12 & 8 & 1540.86 & 0.59 \\ \hline
+0.13 & 8 & 1540.86 & 0.59 \\ \hline
+0.14 & 8 & 1540.86 & 0.59 \\ \hline
+0.15 & 3 & 1053.3 & 0.535 \\ \hline
+\end{tabular}
+\caption{Scores de DBSCAN para distintos radios máximos de cluster.}
+\label{tab:dbscan1}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan1cal}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan1sil}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan1k}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan12cal}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan12sil}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan12k}}
+  \caption{Scores y Nº de clusters de DBSCAN para distintos radios máximos.}
+  \label{fig:dbscan1}
+\end{figure}
+
+Hay que tener en cuenta que este algoritmo agrupa los datos que
+considera ruidosos en un único cluster con la etiqueta
+-1. Desecharemos este cluster, por lo que perderemos algunas
+instancias, en este caso 183. También vemos el tamaño del resto de
+clusters.
+\begin{verbatim}
+Counter({-1: 183, 0: 5042, 1: 628, 2: 116})
+\end{verbatim}
+Desechamos el cluster -1 con el siguientes código, y también
+aprovechamos para calcular los centroides a mano como hicimos con
+Ward.
+\begin{verbatim}
+dataC=data.copy()
+dataC['cluster']=labels
+dataC.drop(dataC[dataC['cluster']==-1].index,inplace=True)
+centroids = dataC.groupby('cluster').mean().values
+\end{verbatim}
+
+\subsubsection{Interpretación de la segmentación}
+
+Representamos primero para $K=3$ los centroides y distribuciones de
+cada cluster.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=92mm]{figures/accidentes/k-means2centroids}
+  \caption{Centroides de los clusters generados por K-means.}
+  \label{fig:k-means2centroids}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=140mm]{figures/accidentes/k-means2distribution}
+  \caption{Distribución de las variables en los clusters generados por
+    K-means.}
+  \label{fig:k-means2distribution}
+\end{figure}
+
+Observamos que el número de vehículos implicados no se utiliza para
+distinguir clusters. Tenemos el cluster 0 (mucho más grande) con
+accidentes leves, el cluster 2 con accidentes con un elevado número de
+víctimas (la mayoría leves) y el cluster 1, que agrupa los accidentes
+con heridos graves.
+
+El número de muertos sigue sin ser lo suficientemente significativo
+para que se tenga en cuenta en esta segmentación, pero por primera vez
+observamos un cluster que agrupa accidentes con heridos graves.
+
+Esta vez los 5969 accidentes acumulan 180 muertos y 882 heridos
+graves. En cuanto a muertos, es una proporción más grande que en el
+primer caso de estudio. Mientras que en cuanto a heridos graves es una
+proporción similar.
+
+Al igual que en el anterior caso de estudio, la mayoría de las
+víctimas son leves. Pero en este uno de los problemas que comentamos
+en pairplot (no se distinguía si había un accidente o 1000 con
+determinados valores de las variables, simplemente aparecía un punto)
+no nos impide visualizarlo. En la Figura \ref{fig:k-means2pair},
+observamos que las gráficas que comparan el número de víctimas con el
+número de heridos leves tienen aproximadamente una tendencia lineal
+con pendiente 1, esto significa que el número de heridos leves es casi
+el número de víctimas. Obviamente no puede haber más heridos leves que
+víctimas, puesto que
+\[\text{TOT\_VICTIMAS=TOT\_MUERTOS+TOT\_HERIDOS\_GRAVES+TOT\_HERIDOS\_LEVES}\]
+El cluster 1 (puntos naranjas) es una excepción a esta tendencia,
+puesto que agrupa los accidentes con heridos graves.
+
+Esta tendencia lineal entre el número de víctimas y heridos leves se
+observa en el resto de pairplots de este caso de uso para todas las
+segmentaciones, tanto con los accidentes a altas horas de la madrugada
+como con los accidentes en horas puntas. Así que omitiremos el resto
+de pairplots.
+
+También en la Figura \ref{fig:k-means2pair}, en la gráfica de la
+diagonal correspondiente a los heridos graves observamos que los
+elemenos del cluster 1 concentran la mayoría de accidentes con heridos
+graves, exceptuando algunos accidentes sueltos que están en el cluster
+2, probablemente porque presenten un elevado número de víctimas. En la
+Figura \ref{fig:k-means2distribution} se observa que el cluster 0 no
+presenta un sólo accidente con heridos graves, por lo que no aparece
+(no se representan distribuciones degeneradas, salta un warning de
+varianza 0).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=160mm]{figures/accidentes/k-means2pair}
+  \caption{Pairplot del agrupamiento generado por K-means para $K=3$.}
+  \label{fig:k-means2pair}
+\end{figure}
+
+\pagebreak
+
+Para $K=6$ generamos las representaciones análogas:
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=100mm]{figures/accidentes/k-means22centroids}
+  \caption{Centroides de los clusters generados por K-means.}
+  \label{fig:k-means22centroids}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=135mm]{figures/accidentes/k-means22distribution}
+  \caption{Distribución de las variables en los clusters generados por
+    K-means.}
+  \label{fig:k-means22distribution}
+\end{figure}
+
+Esta vez tenemos por fin un cluster que agrupa por muertos (cluster 3)
+y otro que agrupa por heridos graves (cluster 4). Como consecuencia,
+el resto de cluster apenas presentan muertos, sólo hay algunos
+accidentes con muertos en los cluster 2 (porque presentará un elevado
+número de víctimas) y en cluster 4 (porque también habrá heridos
+graves).
+
+En la segmentación con \textbf{DBSCAN} tenemos las siguientes representaciones:
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=100mm]{figures/accidentes/dbscan1centroids}
+  \caption{Centroides de los clusters generados por DBSCAN.}
+  \label{fig:dbscan1centroids}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=120mm]{figures/accidentes/dbscan1distribution}
+  \caption{Distribución de las variables en los clusters generados por
+    DBSCAN.}
+  \label{fig:dbscan1distribution}
+\end{figure}
+
+Esta vez se han utilizado únicamente los muertos y heridos graves para
+la segmentación. El cluster 0 incluye accidentes donde todos los
+heridos son leves. El cluster 1 incluye accidentes donde hay un único
+herido grave y ningún muerto. Y el cluster 2 incluye accidentes donde
+hay un único muerto y ningún herido grave. Podemos observar en la
+figura \ref{fig:dbscan1distribution} que no hay excepciones a esta
+regla, esto se debe a que los accidentes con más de un muerto, más de
+un herido grave o tanto muertos como heridos graves han sido agrupados
+con los outliers y descartados en el cluster -1.
+
+No se ha utilizado el número de víctimas ni de vehículos implicados
+para el agrupamiento, pero podemos observar en la figura
+\ref{fig:dbscan1centroids} que los accidentes con mayor gravedad (con
+muertos, seguidos de con heridos graves) acostumbran a presentar un
+menor número de vehículos implicados y menor número de víctimas
+totales. Aunque tenemos que interpretar esto con cuidado, pues el
+número de elementos en el cluster 2 (116) es menor que el del cluster
+-1 (183). Por tanto, esas 183 instancias que el algoritmo ha dejado
+sin agrupar podrían cambiar drásticamente esta tendencia.
+
+\subsection{Accidentes a horas puntas}
+
+\subsubsection{Algoritmos de clustering y resultados}
+
+Una vez más, buscamos un $K$ adecuado para \textbf{K-means}, probamos
+valores y obtenemos los siguientes scores:
+
+\begin{table}[H]
+  \centering
+\begin{tabular}{|c|cc|}
+  \hline
+  ~\hspace{2mm}K\hspace{2mm}~ & ~\hspace{2mm}Calinski\hspace{2mm}~ & ~\hspace{2mm}Silhouette\hspace{2mm}~ \\ \hline
+2 & 2696.34 & 0.6136 \\ \hline
+3 & 3042.18 & 0.6097 \\ \hline
+4 & 3856.17 & 0.6435 \\ \hline
+5 & 3842.02 & 0.7095 \\ \hline
+6 & 4015.9 & 0.7259 \\ \hline
+7 & 4439.09 & 0.7731 \\ \hline
+8 & 4621.84 & 0.805 \\ \hline
+9 & 4772.9 & 0.8667 \\ \hline
+\end{tabular}
+\caption{Scores de K-means para distinto número de clusters.}
+\label{tab:k-means22}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \subfigure[Razón de Calinski-Harabasz]{\includegraphics[width=87mm]{figures/accidentes/k-means22cal}}
+  \subfigure[Coeficiente Silhouette]{\includegraphics[width=87mm]{figures/accidentes/k-means22sil}}
+  \caption{Representaciones de los scores de K-means para distinto número de clusters.}
+  \label{fig:k-means22-scores}
+\end{figure}
+
+Observando las gráficas, Calinski nos sugiere $K=4$ y Silhouette
+$K=5$. Elegimos $K=4$ para que la segmentación sea más fácilemente
+interpretable. Obtenemos los siguientes tamaños de cluster:
+\begin{verbatim}
+Counter({0: 3629, 1: 497, 2: 2020, 3: 525})
+\end{verbatim}
+
+Hacemos lo mismo con \textbf{DBSCAN} para estimar un radio adecuado.
+
+\begin{table}[H]
+  \centering
+\begin{tabular}{|c|ccc|}
+  \hline
+   ~\hspace{2mm}$\varepsilon$\hspace{2mm}~ & ~\hspace{2mm}K\hspace{2mm}~ & ~\hspace{2mm}Calinski\hspace{2mm}~ & ~\hspace{2mm}Silhouette\hspace{2mm}~ \\ \hline
+0.1 & 10 & 1217.9 & 0.8902 \\ \hline
+0.15 & 2 & 1071.13 & 0.5441 \\ \hline
+0.2 & 2 & 1024.81 & 0.5426 \\ \hline
+0.25 & 2 & 1024.81 & 0.5426 \\ \hline
+0.3 & 1 & 445.16 & 0.7473 \\ \hline
+0.35 & 1 & 449.2 & 0.7369 \\ \hline
+\end{tabular}
+\quad
+\begin{tabular}{|c|ccc|}
+  \hline
+   ~\hspace{2mm}$\varepsilon$\hspace{2mm}~ & ~\hspace{2mm}K\hspace{2mm}~ & ~\hspace{2mm}Calinski\hspace{2mm}~ & ~\hspace{2mm}Silhouette\hspace{2mm}~ \\ \hline
+0.1 & 10 & 1217.9 & 0.8902 \\ \hline
+0.11 & 10 & 1217.9 & 0.8902 \\ \hline
+0.12 & 10 & 1217.9 & 0.8902 \\ \hline
+0.13 & 10 & 1217.9 & 0.8902 \\ \hline
+0.14 & 6 & 1111.97 & 0.6051 \\ \hline
+0.15 & 2 & 1071.13 & 0.5441 \\ \hline
+\end{tabular}
+\caption{Scores de DBSCAN para distintos radios máximos de cluster.}
+\label{tab:dbscan2}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan2cal}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan2sil}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan2k}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan22cal}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan22sil}}
+  \subfigure{\includegraphics[width=57mm]{figures/accidentes/dbscan22k}}
+  \caption{Scores y Nº de clusters de DBSCAN para distintos radios máximos.}
+  \label{fig:dbscan2}
+\end{figure}
+
+Nos ha vuelto a ocurrir lo mismo, había mucha diferencia en Silhouette
+y en el número de clusters entre $\varepsilon=0.1$ y
+$\varepsilon=0.15$. Por lo que volvemos a evaluar las métricas para
+varios valores de ese intervalo. Nos quedaremos con
+$\varepsilon=0.15$, que genera menos clusters (2 frente a 6), agrupa
+menos elementos en el cluster -1 (124 frente a 170) y la diferencia en
+las métricas no es demasiada. Obtenemos los siguientes tamaños de
+cluster, y descartaremos el cluster -1.
+\begin{verbatim}
+Counter({-1: 124, 0: 6074, 1: 473})
+\end{verbatim}
+
+\subsubsection{Interpretación de la segmentación}
+
+Visualizamos los centroides y la distribución los valores de los
+atributos en cada cluster para el agrupamiento generado por
+\textbf{K-means}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=120mm]{figures/accidentes/k-means3centroids}
+  \caption{Centroides de los clusters generados por K-means.}
+  \label{fig:k-means3centroids}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=130mm]{figures/accidentes/k-means3distribution}
+  \caption{Distribución de las variables en los clusters generados por
+    K-means.}
+  \label{fig:k-means3distribution}
+\end{figure}
+
+Observamos dos clusters de accidentes leves (normalmente un sólo
+herido leve), uno con exactamente (en la Figura
+\ref{fig:k-means3distribution} se ve una barra en el 1 y ningún punto
+en el resto de valores) un vehículo implicado (cluster 2) y el otro
+con dos o más (cluster 0). Otro cluster (cluster 1) con accidentes con
+más víctimas, aunque la mayoría leves. El cluster 3 agrupa los
+accidentes con heridos graves.
+
+En esta ocasión, el agrupamiento tampoco diferencia por el total de
+muertos, probablemente por el reducido número de muertos en estos
+accidentes. Entre los 6671 accidentes suman 47 muertos, la proporción
+más baja entre las clases que hemos estudiado.
+
+Ahora analizamos el agrupamiento generado por \textbf{DBSCAN}:
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=110mm]{figures/accidentes/dbscan3centroids}
+  \caption{Centroides de los clusters generados por DBSCAN.}
+  \label{fig:dbscan3centroids}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=140mm]{figures/accidentes/dbscan3distribution}
+  \caption{Distribución de las variables en los clusters generados por
+    DBSCAN.}
+  \label{fig:dbscan3distribution}
+\end{figure}
+
+Tenemos el cluster 0, mucho más numeroso, que agrupa los accidentes
+sin heridos leves. Mientras que el cluster 1, más reducido, agrupa los
+accidentes con un único herido grave. En la Figura
+\ref{fig:dbscan3distribution} observamos que no hay excepciones.
+
+Entre los 124 datos que DBSCAN considera como ruidosos y agrupa en el
+cluster -1, están todos los accidentes con víctimas mortales y los que
+tienen más de un herido grave. Por la baja proporción de este tipo de
+accidentes dentro de la clase, el algoritmo los ha considerado como
+ruidosos.
+
+\subsection{Comparación de ambas clases}
+
+Se espera que los accidentes en horas puntas sean mas leves
+
+Mas trafico, la gente va mas atenta, mas despacio
+
+Por la noche con la carretera vacía es mas facil que se distraigan,
+van mas rapido
+
+\section{Contenido adicional}
 
 \subsection{Outliers y la poca importancia de los heridos graves y
-  muertos}
+  muertos} \label{sec:outliers}
+
 TODO
 
 En los 4143 datos del caso de estudio 1 hay 92 muertos
@@ -1169,7 +1663,8 @@ con un valor más alto que 3, para que los maximos fuesen 2-3 en vez de
 
 Como contenido adicional (aunque lo incluiremos en esta sección)
 Resaltaremos que el problema de que no se haya agrupado por muertos y
-heridos graves se podría haber solucionado (al menos para K=6)
+heridos graves se podría haber solucionado (al menos para K=6 en el
+caso de estudio 1)
 
 \subsection{Estudio de variables circunstanciales y de tipo dentro de
   los cluster}
