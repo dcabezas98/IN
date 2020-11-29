@@ -1626,47 +1626,148 @@ ruidosos.
 
 \subsection{Comparación de ambas clases}
 
-Se espera que los accidentes en horas puntas sean mas leves
+Compararemos las dos clases que acabamos de segmentar. Intuitivamente,
+los accidentes a altas horas de la noche deberían producirse en calles
+o carreteras prácticamente vacías, donde la gente suele conducir muy
+rápido, a la máxima velocidad permitida por la vía y en ocasiones
+sobrepasando el límite. Esto se traduciría en accidentes graves.
 
-Mas trafico, la gente va mas atenta, mas despacio
+Los accidentes a horas puntas deberían producirse en el interior de
+las ciudades y en circunvalaciones, con tráfico denso o colapsado,
+donde la gente va más atenta y despacio. Según esta intuición deberían
+de ser accidentes más leves, como choques suaves o por alcance en el
+caso de atascos o semáforos.
 
-Por la noche con la carretera vacía es mas facil que se distraigan,
-van mas rapido
+Atenderemos a los agrupamientos generados por K-means. En la clase de
+accidentes a altas horas de la madrugada tenemos 5969 instancias. El
+agrupamiento con $K=3$ (figuras \ref{fig:k-means2centroids} y
+\ref{fig:k-means2distribution}) nos proporcina los siguientes
+clusters:
+\begin{enumerate}\setcounter{enumi}{-1}
+\item 4652 instancias. Accidentes con normalmente un herido leve y sin
+  heridos graves ni muertos. Generalmente 1 o 2 vehículos
+  implicados.
+\item 717 instancias. Accidentes con al menos un herido grave (la
+  mayoría tienen 1), normalmente no tienen heridos leves (salvo alguna
+  excepción).
+\item 600 instancias. Accidentes con dos o más víctimas, la mayoría de
+  ellas leves. Aunque la mayoría de accidentes de este cluster
+  presentan 3 ó 4 víctimas.
+\end{enumerate}
+
+En la clase de accidentes a horas puntas tenemos 6671 instancias. El
+agrupamiento con $K=4$ (figuras \ref{fig:k-means3centroids} y
+\ref{fig:k-means3distribution}) nos proporciona los siguientes
+clusters:
+\begin{enumerate}\setcounter{enumi}{-1}
+\item 3629 instancias. Accidentes con normalmente un herido leve y sin
+  heridos graves ni muertos, con 2 o más vehículos implicados
+  (generalmente dos).
+\item 497 instancias. Accidentes con dos o más víctimas, la mayoría de
+  ellas leves. Aunque la mayoría de accidentes de este cluster
+  presentan 3 ó 4 víctimas.
+\item 2020 instancias. Accidentes con normalmente un herido leve y sin
+  heridos graves ni muertos, con exactamente un vehículo implicado.  
+\item 525 instancias. Accidentes con al menos un herido grave (la
+  mayoría tienen 1), normalmente no tienen heridos leves (salvo alguna
+  excepción). 
+\end{enumerate}
+
+Parece que los agrupamientos son similares y que el cluster 0 de la
+primera clase equivale a los clusters 0 y 2 de la segunda. Estos
+accidentes más leves (una sola víctima y leve) representan un 77.936\%
+de los accidentes en la primera clase (madrugada) y un 84.68\% de los
+accidentes en la segunda (horas puntas).
+
+El cluster 1 de la primera clase equivale al cluster 3 de la segunda
+clase. Estos accidentes con heridos graves representan un 12\% en la
+primera clase y un 7.87\% en la segunda.
+
+El cluster 2 de la primera clase equivale al cluster 1 de la
+segunda. Estos accidentes con múltiples víctimas (la mayoría leves)
+representan un 10.05\% de los accidentes de la primera clase y un
+7.45\% de los de la segunda.
+
+Estos dos últimos párrafos describen dos clases de accidentes de mayor
+gravedad, ya sea por número de heridos o por gravedad de los
+heridos. Entre los accidentes a altas horas de la madrugada, estos más
+graves representan un porcentaje mayor que en los accidentes en horas
+puntas, donde la proporción de accidentes con sólo un herido leve es
+mayor. Esto apoya nuestra intuición de que los accidentes a horas
+puntas son más leves que los accidentes a altas horas de la madrugada.
 
 \section{Contenido adicional}
 
 \subsection{Outliers y la poca importancia de los heridos graves y
   muertos} \label{sec:outliers}
 
-TODO
+Hemos observado que en el primer caso de uso ninguno de los algoritmos
+ha distinguido por heridos graves ni muertos a la hora de generar los
+clusters. Los 4143 datos del caso de estudio 1 suman 92 muertos y 714
+heridos graves, que en proporción es mayor a los 595 heridos graves y
+47 muertos que acumulan los 6671 accidentes ocurridos a horas puntas,
+donde sí se ha utilizado el atributo total de heridos graves para la
+segmentación.
 
-En los 4143 datos del caso de estudio 1 hay 92 muertos
-714 graves en total
+Este problema genera impurezas en los clusters, por ejemplo un
+accidente con un sola víctima que muere o resulta herida grave (un
+atropello, por ejemplo) podría aparecerer en el cluster de los
+accidentes leves (un sola víctima, que normalmente es leve), por el
+hecho de presentar una sóla víctima. Cuando, de no agrupar por heridos
+graves y muertos, quizá tuviese más sentido agrupar ese accidente en
+un cluster de accidentes con múltiples víctimas, que podemos
+considerar accidentes más graves.
 
-Genera impurezas en los clusters. Por ejemplo una sola víctima
-(colision con obstaculo o atropello) que muere o es grave nos lo mete con los leves (los que tienen pocas victimas)
+El origen de este problema se debe a que hemos tomado la decisión de
+limpiar los datos de outliers en el resto de atributos (número de
+víctimas, heridos leves y vehículos implicados). Esto provoca que al
+normalizar los atributos entre 0 y 1, los atributos en los que
+limpiamos los outliers ganen más relevancia.
 
-Problema surge al quitar outliers
-y normalizar
+Por ejemplo, en presencia del accidente con 52 víctimas. Al normalizar
+con \texttt{MinMaxScaler}, los accidentes con 5 víctimas obtienen el
+valor $\frac{5-1}{52-1}\approx 0.078$. Mientras que si el máximo de
+víctimas fuese 10, este valor sería de $\frac{5-1}{10-1}\approx
+0.44$. Si el número máximo de muertos es 4, un accidente con un muerto
+pasaría a tener el valor $\frac{1}{4}=0.25$. En el primer caso (sin
+limpiar outliers), se considerarían dos accidentes con el mismo número
+de muertos pero que se diferencien en 5 víctimas más similares que dos
+accidentes que se diferencien en 1 muerto pero en menos de 5
+víctimas. En el segundo caso (limpiando outliers), ocurre lo
+contrario.
 
-3 formas:
-
-mas peso a estas variables (metrica customizada para
-algoritmos)
-
-no quitar outliers. de no haberlos quitado se hubiese
-reducido mucho la importancia del resto de variables respecto a graves y muertos al normalizar
-
-haber eliminado outliers en graves y muertos (los quitaba todos), pero
-con un valor más alto que 3, para que los maximos fuesen 2-3 en vez de
-4-5 y se le restase menos importancia al normalizar.
-
-Como contenido adicional (aunque lo incluiremos en esta sección)
-Resaltaremos que el problema de que no se haya agrupado por muertos y
-heridos graves se podría haber solucionado (al menos para K=6 en el
-caso de estudio 1)
+Esto se podría solucionar de diversas formas, al menos para el
+agrupamiento con $K=6$:
+\begin{itemize}
+\item Crear una métrica customizada en lugar de la euclídea que
+  utilizan por defecto los algoritmos para dar más peso a estas
+  variables.
+\item No limpiar los outliers, al coste de que las gráficas tengan
+  ejes con escalas desproporcionadas. En presencia de un accidente con
+  52 víctimas, no podríamos distinguir entre 1 víctima y 4 víctimas
+  con un simple vistazo a la gráfica, ya que se verían muy próximos.
+\item Haber limpiado también los outliers en los atributos número de
+  muertos y de heridos graves. El problema de esta medida es que
+  tomando $\mu\pm 3\cdot\sigma$ como margen (normalmente se utiliza
+  1.5 en lugar de 3), se eliminaban todos los muertos y heridos
+  graves. Podríamos haber tomado más margen, o simplemente haber
+  colapsado en 1 ó 2 los valores de estos atributos que los superasen,
+  de forma que los atributos número de muertos y heridos graves
+  pierdan menos importancia al normalizar.
+\item Haber limpiado los outliers manualmente. Esto no siempre es
+  posible, pero es lo que hemos aplicado en el segundo caso de estudio
+  eliminando solamente el accidente con 52 víctimas.
+\end{itemize}
 
 \subsection{Estudio de variables circunstanciales y de tipo dentro de
-  los cluster}
+  los clusters}
+
+En la interpretación del agrupamiento por K-menas del primer caso de
+uso (figuras \ref{fig:k-means1centroids} y
+\ref{fig:k-means1distribution}), especulamos con los tipos de
+accidentes que podrían formar cada cluster. Comprobaremos si estábamos
+en lo cierto. TODO
+
+\section{Bibliografía/Webgrafía}
 
 \end{document}
