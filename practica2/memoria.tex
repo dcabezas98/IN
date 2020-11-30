@@ -1358,7 +1358,8 @@ Observamos que el número de vehículos implicados no se utiliza para
 distinguir clusters. Tenemos el cluster 0 (mucho más grande) con
 accidentes leves, el cluster 2 con accidentes con un elevado número de
 víctimas (la mayoría leves) y el cluster 1, que agrupa los accidentes
-con heridos graves.
+con heridos graves, generalmente hay 1, podrían tratarse de
+atropellos, por ejemplo.
 
 El número de muertos sigue sin ser lo suficientemente significativo
 para que se tenga en cuenta en esta segmentación, pero por primera vez
@@ -1762,12 +1763,164 @@ agrupamiento con $K=6$:
 \subsection{Estudio de variables circunstanciales y de tipo dentro de
   los clusters}
 
-En la interpretación del agrupamiento por K-menas del primer caso de
-uso (figuras \ref{fig:k-means1centroids} y
+En la interpretación del agrupamiento por K-means del \textbf{primer
+  caso de estudio} (figuras \ref{fig:k-means1centroids} y
 \ref{fig:k-means1distribution}), especulamos con los tipos de
 accidentes que podrían formar cada cluster. Comprobaremos si estábamos
-en lo cierto. TODO
+en lo cierto.
+
+Primero estudiaremos la proporción de choques frontales y laterales
+respecto a los choques por alcance. Compararemos dichas proporciones
+entre clusters y con la clase completa (accidentes en condiciones
+``óptimas'' para la conducción).
+
+\begin{table}[H]
+  \centering
+\begin{tabular}{|c|cc|}
+  \hline
+  Conjunto de datos & Choques frontales o laterales & Choques por alcance \\ \hline
+  General & 0.3367 & 0.1624 \\ \hline
+  Cluster 0 & 0.4105 & 0.2888 \\ \hline
+  Cluster 1 & 0.0 & 0.0 \\ \hline
+  Cluster 2 & 0.5963 & 0.2691 \\ \hline
+\end{tabular}
+\caption{Proporción de los tipos de choque entre los distintos conjuntos de datos.}
+\label{tab:prop-choques1}
+\end{table}
+
+Obviamente en el cluster 1 no hay ningún choque entre vehículos,
+puesto que todos los accidentes que lo componen tienen un sólo
+vehículo implicado.
+
+Nos sorprende que en el cluster 0, donde hay accidentes con más
+víctimas, abunden más los choques por alcance que los frontales y
+laterales que en el cluster 2, donde los accidentes acostumbran a
+tener menos víctimas; y para los choques por alcance ocurre lo
+contrario. Esto es lo opuesto a lo que razonamos teniendo en cuenta
+que los choques frontales y laterales suelen ser más graves que los
+choques por alcance.
+
+Sospechamos que la mayoría de choques del cluster 2 se produjeron a
+baja velocidad en zonas urbanas. 
+
+\begin{table}[H]
+  \centering
+\begin{tabular}{|c|cc|}
+  \hline
+  Conjunto de datos & Vías urbanas & Vías interurbanas \\ \hline
+  General & 0.518 & 0.482 \\ \hline
+  Cluster 0 & 0.3985 & 0.6014 \\ \hline
+  Cluster 1 & 0.4591 & 0.5409 \\ \hline
+  Cluster 2 & 0.5904 & 0.4096 \\ \hline
+\end{tabular}
+\caption{Proporción de las zonas donde ocurren los accidentes en los distintos conjuntos de datos.}
+\label{tab:prop-urbanas1}
+\end{table}
+
+Observando la tabla, podemos concluir que la mayor gravedad de los
+accidentes del cluster 0 respecto al 2 no se debe al tipo de
+accidentes, sino a que una mayor proporción de accidentes ocurren en
+vías interurbanas, donde se circula más rápido.
+
+Ahora, analizaremos el agrupamiento generado por \textbf{K-means} con
+$K=6$ del \textbf{segundo caso de estudio} para la clase de accidentes
+a altas horas de la madrugada (figuras \ref{fig:k-means22centroids} y
+\ref{fig:k-means22distribution}). En concreto investigaremos qué
+variables de circunstancia o tipo diferencian a los clusters 3 y 4
+(con muertos y heridos graves respectivamente) del resto.
+
+Empezamos por las proporciones de los tipos de choque.
+
+\begin{table}[H]
+  \centering
+\begin{tabular}{|c|cc|}
+  \hline
+  Conjunto de datos & Choques frontales o laterales & Choques por alcance \\ \hline
+  General & 0.2173 & 0.1184 \\ \hline
+  Cluster 3 & 0.1226 & 0.0645 \\ \hline
+  Cluster 4 & 0.1599 & 0.0683 \\ \hline
+\end{tabular}
+\caption{Proporción de los tipos de choque entre los distintos conjuntos de datos.}
+\label{tab:prop-choques1}
+\end{table}
+
+Observamos que la proporción de choques frontales o laterales es menor
+en estos clusters que en la clase completa, sobre todo en el de
+muertos. Aún menor es la proporción de choques por alcance, lo que
+indica que los choques por alcance son menos propensos a producir
+muertos y heridos graves que los choques frontales y laterales. Sin
+embargo, el tipo de choques no parece la causa de que los accidentes
+de los clusters 3 y 4 presenten muertos y heridos graves, volvemos a
+probar con la zona en la que ocurren.
+
+\begin{table}[H]
+  \centering
+\begin{tabular}{|c|cc|}
+  \hline
+  Conjunto de datos & Vías urbanas & Vías interurbanas \\ \hline
+  General & 0.5016 & 0.4984 \\ \hline
+  Cluster 3 & 0.271 & 0.729 \\ \hline
+  Cluster 4 & 0.4535 & 0.5465 \\ \hline
+\end{tabular}
+\caption{Proporción de las zonas donde ocurren los accidentes en los distintos conjuntos de datos.}
+\label{tab:prop-urbanas2}
+\end{table}
+
+Observamos que en los clusters 3 y 4 hay una mayor proporción de
+accidentes en zonas interurbanas, sobre todo en el 3 (el de los
+accidentes con muertes). La zona en la que ocurren los accidentes
+parece ser un factor más influyente en la gravedad (en el sentido de
+que haya heridos graves y muertos) de los accidentes.
+
+Por último, comprobamos que la proporción de atropellos entre los
+accidentes mortales es mucho mayor que en la totalidad de la clase. En
+el caso del cluster de accidente con heridos graves, la proporción de
+atropellos es también mayor, pero no destaca tanto como en el cluster
+3. Esto sugiere que los atropellos son más propensos a presentar
+víctimas graves y sobre todo mortales entre la totalidad de la clase.
+
+\begin{table}[H]
+  \centering
+\begin{tabular}{|c|c|}
+  \hline
+  Conjunto de datos & Atropellos \\ \hline
+  General & 0.0591 \\ \hline
+  Cluster 3 & 0.1742 \\ \hline
+  Cluster 4 & 0.0959 \\ \hline
+\end{tabular}
+\caption{Proporción de atropellos en los distintos conjuntos de
+  datos.}
+\label{tab:prop-atropellos}
+\end{table}
 
 \section{Bibliografía/Webgrafía}
+
+Portal estadístico DGT:
+\begin{itemize}
+\item \href{https://sedeapl.dgt.gob.es/WEB_IEST_CONSULTA/subcategoria.faces}{https://sedeapl.dgt.gob.es/WEB\_IEST\_CONSULTA/subcategoria.faces}
+\end{itemize}
+
+Wikipedia:
+\begin{itemize}
+\item Algoritmo K-means: \href{https://en.wikipedia.org/wiki/K-means_clustering}{https://en.wikipedia.org/wiki/K-means\_clustering}
+\item Algoritmo DBSCAN: \href{https://en.wikipedia.org/wiki/DBSCAN}{https://en.wikipedia.org/wiki/DBSCAN}
+\item Algoritmo Ward: \href{https://en.wikipedia.org/wiki/Ward%27s_method}
+    {https://en.wikipedia.org/wiki/Ward\%27s\_method}
+  \item Índice Silhouette: \href{https://en.wikipedia.org/wiki/Silhouette_%28clustering%29}
+      {https://en.wikipedia.org/wiki/Silhouette\_\%28clustering\%29}
+    \item Razón de Calinski-Harabasz: \href{https://www.tandfonline.com/doi/pdf/10.1080/03610927408827101?needAccess=true}{https://www.tandfonline.com/doi/pdf/10.1080/03610927408827101?needAccess=true}
+    \item Método del codo: \href{https://en.wikipedia.org/wiki/Elbow_method_%28clustering%29}
+        {https://en.wikipedia.org/wiki/Elbow\_method\_\%28clustering\%29}
+        
+\end{itemize}
+
+Documentación \textit{sklearn}:
+\begin{itemize}
+\item \texttt{MinMaxScaler}: \href{https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html}{https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html}
+\item Algoritmo K-means: \href{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html}{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html}
+\item Clustering aglomerativo:
+  \href{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html}{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html}
+\item Algoritmo DBSCAN: \href{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html}{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html}
+\end{itemize}
 
 \end{document}
