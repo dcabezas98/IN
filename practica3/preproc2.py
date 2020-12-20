@@ -1,7 +1,7 @@
-
+import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.feature_selection import VarianceThreshold
+from sklearn.preprocessing import LabelEncoder
+from imblearn.over_sampling import SMOTE
 
 DATA='ugrin2020-vehiculo-usado-multiclase/'
 NOMBRE=DATA+'nombre.csv'
@@ -9,7 +9,17 @@ CIUDAD=DATA+'ciudad.csv'
 COMBUSTIBLE=DATA+'combustible.csv'
 TIPO_MARCHAS=DATA+'tipo_marchas.csv'
 
-def encodeNorm(train, test):
+# Tratar los valores perdidos
+def na(train, test):    
+    
+    del train['Descuento']
+    del test['Descuento']
+    train.dropna(inplace=True)
+
+    return train, test
+
+# Codificar los datos
+def encode(train, test):
 
     le = LabelEncoder()
 
@@ -59,9 +69,36 @@ def encodeNorm(train, test):
     train.Potencia=train.Potencia.apply(lambda x: float(x.split(' ')[0]))
     test.Potencia=test.Potencia.apply(lambda x: float(x.split(' ')[0]))
 
-    # Estandarizamos los datos
-
-    selector = VarianceThreshold()
-    std = StandardScaler()
-
     return train, test
+
+# Split train label
+def split(train, test):
+
+    train_array = np.array(train)
+    label=train_array[:,-1]
+    train_array = train_array[:,:-1]
+
+    test_array = np.array(test)
+
+    return train_array, label, test_array
+
+def shuffle_in_unison(a, b):
+    rng_state = np.random.get_state()
+    np.random.shuffle(a)
+    np.random.set_state(rng_state)
+    np.random.shuffle(b)
+
+# Preprocesado
+def preprocessing(train, test):
+
+    train, test = na(train, test)
+    
+    train, test = encode(train, test)
+
+    train, label, test = split(train, test)
+
+    train, label = SMOTE(random_state=25).fit_resample(train, label)
+
+    shuffle_in_unison(train, label) 
+
+    return train, label, test
