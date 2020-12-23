@@ -18,6 +18,7 @@ def na(train, test):
 
     del train['Descuento']
     del test['Descuento']
+    
     train.dropna(inplace=True)
 
     return train, test
@@ -28,12 +29,12 @@ def encode(train, test):
     le = LabelEncoder()
 
     # Me quedo con la marca del coche
-    train.Nombre=train.Nombre.apply(lambda x: x.split(' ')[0])
-    test.Nombre=test.Nombre.apply(lambda x: x.split(' ')[0])
+    #train.Nombre=train.Nombre.apply(lambda x: x.split(' ')[0])
+    #test.Nombre=test.Nombre.apply(lambda x: x.split(' ')[0])
 
     # Codifico las marcas
     nombres=pd.read_csv(NOMBRE,header=0)
-    nombres.Nombre=nombres.Nombre.apply(lambda x: x.split(' ')[0])
+    #nombres.Nombre=nombres.Nombre.apply(lambda x: x.split(' ')[0])
     le.fit(nombres.Nombre)
     train.Nombre = le.transform(train.Nombre)
     test.Nombre = le.transform(test.Nombre)
@@ -83,7 +84,7 @@ def binarize(train, test):
 
     # Codifico las marcas
     nombres=pd.read_csv(NOMBRE,header=0)
-    nombres.Nombre=nombres.Nombre.apply(lambda x: x.split(' ')[0])
+    #nombres.Nombre=nombres.Nombre.apply(lambda x: x.split(' ')[0])
     marcas_enc=le.fit_transform(nombres.Nombre)
     oneHot.fit(marcas_enc.reshape(-1,1))
     marca_bin_train=oneHot.transform(train[:,0].reshape(-1, 1))

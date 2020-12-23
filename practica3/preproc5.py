@@ -16,8 +16,8 @@ VARIANCETHRESHOLD=0
 # Tratar los valores perdidos
 def na(train, test):
 
-    del train['Descuento']
-    del test['Descuento']
+    train.Descuento.fillna(value=0.0,inplace=True)
+    test.Descuento.fillna(value=0.0,inplace=True)
     train.dropna(inplace=True)
 
     return train, test
