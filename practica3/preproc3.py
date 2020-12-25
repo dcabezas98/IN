@@ -18,7 +18,8 @@ def na(train, test):
 
     del train['Descuento']
     del test['Descuento']
-    train.dropna(inplace=True)
+    train=train[train.Combustible!='Electric']
+    train=train.dropna()
 
     return train, test
 
@@ -45,19 +46,17 @@ def encode(train, test):
     test.Ciudad = le.transform(test.Ciudad)
 
     # Codifico combustibles
-    combustibles = pd.read_csv(COMBUSTIBLE, header=0)
-    le.fit(combustibles.Combustible)
+    le.classes_=['LPG','CNG','Petrol','Diesel']
     train.Combustible = le.transform(train.Combustible)
     test.Combustible = le.transform(test.Combustible)
 
     # Codifico tipo marchas
-    tipo_marchas = pd.read_csv(TIPO_MARCHAS, header=0)
-    le.fit(tipo_marchas.Tipo_marchas)
+    le.classes_=['Manual','Automatic']
     train.Tipo_marchas = le.transform(train.Tipo_marchas)
     test.Tipo_marchas = le.transform(test.Tipo_marchas)
 
     # Codifico manos
-    le.fit(['First','Second','Third','Fourth & Above'])
+    le.classes_=['First','Second','Third','Fourth & Above']
     train.Mano = le.transform(train.Mano)
     test.Mano = le.transform(test.Mano)
 
@@ -79,7 +78,7 @@ def encode(train, test):
 def binarize(train, test):
 
     le = LabelEncoder()
-    oneHot= OneHotEncoder(sparse=False, drop='first')
+    oneHot= OneHotEncoder(sparse=False)
 
     # Codifico las marcas
     nombres=pd.read_csv(NOMBRE,header=0)
@@ -97,21 +96,13 @@ def binarize(train, test):
     ciudad_bin_test=oneHot.transform(test[:,1].reshape(-1, 1))
 
     # Codifico los combustibles
-    combustibles = pd.read_csv(COMBUSTIBLE, header=0)
-    combustibles_enc=le.fit_transform(combustibles.Combustible)
+    combustibles_enc=le.fit_transform(['LPG','CNG','Petrol','Diesel'])
     oneHot.fit(combustibles_enc.reshape(-1,1))
     combustible_bin_train=oneHot.transform(train[:,4].reshape(-1, 1))
     combustible_bin_test=oneHot.transform(test[:,4].reshape(-1, 1))
 
-    # Codifico tipo marchas
-    tipo_marchas = pd.read_csv(TIPO_MARCHAS, header=0)
-    marchas_enc=le.fit_transform(tipo_marchas.Tipo_marchas)
-    oneHot.fit(marchas_enc.reshape(-1,1))
-    marchas_bin_train=oneHot.transform(train[:,5].reshape(-1, 1))
-    marchas_bin_test=oneHot.transform(test[:,5].reshape(-1, 1))
-
-    train=np.hstack((marca_bin_train,ciudad_bin_train,train[:,2:4],combustible_bin_train,marchas_bin_train,train[:,6:]))
-    test=np.hstack((marca_bin_test,ciudad_bin_test,test[:,2:4],combustible_bin_test,marchas_bin_test,test[:,6:]))
+    train=np.hstack((marca_bin_train,ciudad_bin_train,train[:,2:4],combustible_bin_train,train[:,5:]))
+    test=np.hstack((marca_bin_test,ciudad_bin_test,test[:,2:4],combustible_bin_test,test[:,5:]))
 
     return train, test
     
