@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder
 
 DATA='ugrin2020-vehiculo-usado-multiclase/'
 NOMBRE=DATA+'nombre.csv'

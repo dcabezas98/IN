@@ -1,4 +1,4 @@
-\documentclass[oneside]{book}
+\documentclass{article}
 
 \usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry} 
 
@@ -71,6 +71,18 @@
 
 \begin{document}
 \maketitle
+
+\pagebreak
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=180mm]{leaderboard}
+  \caption{Leaderboard definitiva de la competición.}
+  \label{fig:leaderboard}
+\end{figure}
+
+\pagebreak
+
 \tableofcontents
 
 \pagebreak
@@ -223,5 +235,105 @@ del 90\%. También tres HistGradientBoosting con 100, 150 y 200 iteraciones máx
 \caption{Pruebas realizadas}
 \label{tab:pruebas}
 \end{longtable}
+
+\textbf{Nota:} Los valores entre paréntesis en la columna de
+validación no corresponden a validación cruzada, sino a un conjunto de
+validación que he separado para paliar un problema de sobreajuste. Ver Sección \ref{val-sobreajuste}.
+
+\textbf{Nota 2:} El intento $n$, corresponde al archivo
+\texttt{try$n$.csv}, pero en Kaggle corresponde al $n+1$ debido a que
+subí un intento corrupto por un error en el formato de la salida.
+
+\pagebreak
+
+\section{Introducción}
+
+TODO
+
+\pagebreak
+
+\section{Preprocesados}
+
+El número de datos que presentaban valores perdidos en alguna de las
+columnas era bastante bajo, del orden de pocos cientos entre los cerca
+de 4800 datos, y no hay valores perdidos en los datos de test; es por
+ello que desechamos las instancias con valores perdidos en alguna de
+las columnas. Una excepción es la columna Descuento, en la que la gran
+mayoría de las instancias carecen de valor, por esta razón tomamos la
+decisión de desechar la columna. Hablaremos sobre ella más tarde.
+
+Una vez tratado el problema de los valores perdidos, probamos distintas técnicas de preprocesado.
+
+El \textbf{Preprocesado 1} es el mínimo para que os algoritmos puedan
+ejecutarse. Codificamos las variables categóricas con
+\texttt{LabelEncoder}, primero nos quedamos con la marca del coche, ya
+que hay cerca de 2000 modelos y son demasiados para que los algoritmos
+puedan aprovechar la información sólo con los algo más de 4000 datos
+de entrenamiento de los que disponemos. Convertimos Consumo, Motor\_CC
+y Potencia a numérica: por ejemplo, el string \texttt{23.4 kmpl} se
+convierte en el flotante 23.4. También codificamos la mano como
+numérica (del 1 al 4).
+
+Con este procesamiento sólo hemos probado el intento 1, seguidamente
+intentamos mejorarlo.
+
+Las clases están desbalanceadas, hay una (3) con casi la mitad de las
+instancias de entrenamiento y otras con cerca del 5\% de las
+instancias. Para balancearlas he probado dos técnicas que se nos
+explicaron en el seminario sobre balanceo. La primera ha sido
+undersampling, y la deseché por obtener resultados bastante peores con
+Random Forest por defecto que el preprocesado 1. La segunda ha sido
+oversampling con \texttt{SMOTE}, que corresponde al
+\textbf{Preprocesado 2}. Esta técnica si ha supuesto una mejora
+significativa y he decidido mantenerla. Con este preprocesamiento,
+sólo he probado los intentos 2 y 3, éste último con una modificación que comentaremos en la Sección \ref{descuento}.
+
+El \textbf{Preprocesado 3} aplica técnicas que acostumbran a
+beneficiar a modelos como KNN, SVM y redes neuronales. Estas técnicas
+son la binarización de características nominales y la estandarización
+de los datos (reescalarlos y desplazarlos para que tengan media 0 y
+varianza 1). He mantenido este preprocesamiento por el resto de
+experimentos, añadiendo pequeñas variaciones en el intento 11
+(relativa a la columna Descuento) y en el intento 14, en el que he
+combinado este preprocesamiento con PCA para el 95\% de variabilidad
+explicada, pero resultados peores.
+
+En el intento 15, he corregido un error en el código que enumeraba
+incorrectamente los valores de la columna Mano (el 1 debe corresponder
+a primera mano, el 2 a segunda, el 3 a tercera y el 4 a cuarta o
+más). También he aprovechado para eliminar la única instancia de
+entrenamiento correspondiente a un coche eléctrico, ya que el conjunto
+de test no presenta instancias correspondientes a este tipo de
+coches. Todos los intentos posteriores se realizan con la nueva
+versión corregida de este preprocesamiento, aunque no parece que el
+error tuviese poca relevancia (de hecho el intento 15 obtiene peor
+score en test que el 8, correspondiente al mismo modelo sin el arreglo
+en los datos).
+
+\pagebreak
+
+\section{Estimación de hiperparámetros}
+
+\subsection{Sobreajuste con oversampling y validación
+  cruzada} \label{val-sobreajuste}
+
+\pagebreak
+
+\section{Modelos}
+
+\pagebreak
+
+\section{Otras pruebas fallidas}
+
+Describo otras estrategias que he intentado pero desechado por obtener
+scores bastante bajos en validación.
+
+\subsection{Experimentos con la columna descuento} \label{descuento}
+
+\subsection{Naive-Bayes}
+
+\subsection{Clustering}
+
+\section{Webgrafía}
 
 \end{document}
