@@ -587,6 +587,53 @@ scores bastante bajos en validación.
 
 \subsection{Experimentos con la columna descuento} \label{descuento}
 
+Al no tener en cuenta el descuento, es lógico pensar que los coches
+con valores altos en este campo pueden confundir a los algoritmos, ya
+que podrían estar en una categoría más baja de la que realmente
+estarían si no tuviesen descuento. Del mismo modo, es posible que
+fracasemos al clasificar datos de test porque un elevado descuento los
+sitúe en una categoría más baja que la que le correspondería.
+
+Pruebo dos ideas en esta línea. La primera en el intento 3, en la que
+elimino los ejemplos de train que presentan algún descuento. Esto
+evita que los algoritmos sean entrenados erróneamente, pero sigue
+existiendo el problema en el test. No logro ninguna mejora con esta
+idea. Además, estoy suponiendo que las instancias con valor NA en
+descuento se trata de coches sin descuento, lo cual podría no ocurrir.
+
+Bajo esta suposición pruebo una segunda idea en esta línea, que
+corresponde al intento 14. Sustituyo por 0 los valores perdidos en la
+columna Descuento en lugar de eliminar la columna, tanto en train como
+en test. Tampoco logro ninguna mejora con esta idea.
+
+Finalmente, desecho cualquier esperanza de obtener información con el
+siguiente experimento: Primero separo del conjunto de train un
+conjunto de validación correspondiente a todos los ejemplos que
+cuentan con el campo descuento. Entreno mi mejor algoritmo hasta el
+momento (GradientBoosting con 500 estimadores) con los datos restantes
+y realizo predicción sobre el conjunto de validación. Obtengo las
+siguiente tablas:
+
+\begin{figure}[H]
+  \centering \subfigure[Fallos y aciertos en las predicciones.]{
+    \includegraphics[width=85mm]{imgs/descuento-count} }
+  \subfigure[Descuentos en las predicciones acertadas y falladas.]{
+    \includegraphics[width=85mm]{imgs/descuento-mean} }
+  \caption{Relación entre los descuentos y la exactitud de las predicciones.}
+  \label{fig:descuento}
+\end{figure}
+
+En la tabla de la izquierda, observamos que los fallos se producen
+aproximadamente en la misma medida por exceso ($\text{Dif}>0$,
+predecimos una clase más cara a la correspondiente) que por defecto
+($\text{Dif}<0$, predecimos una clase más barata a la
+correspondiente). En la tabla de la derecha observamos que los valores
+de descuento no son mayores en las instancias que fallamos, sino en
+las que acertamos. Tampoco hay una diferencia significativa entre el
+descuento medio de las instancias que fallamos por exceso o
+defecto. Por tanto, no parece que altos descuentos lleven a mayor
+error en las predicciones.
+
 \subsection{Naive-Bayes}
 
 \subsection{Clustering}
