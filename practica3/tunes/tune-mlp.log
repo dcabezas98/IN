@@ -1,0 +1,7 @@
+MLP
+
+'early_stopping': False, 'hidden_layer_sizes':250
+0.914739
+
+'early_stopping': False, 'hidden_layer_sizes': (200, 200)
+0.917917

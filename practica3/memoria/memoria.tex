@@ -76,7 +76,7 @@
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=180mm]{leaderboard}
+  \includegraphics[width=180mm]{imgs/leaderboard}
   \caption{Leaderboard definitiva de la competición.}
   \label{fig:leaderboard}
 \end{figure}
@@ -248,9 +248,15 @@ subí un intento corrupto por un error en el formato de la salida.
 
 \section{Introducción}
 
-TODO
-
-\pagebreak
+Abordamos en una competición de Kaggle un problema del mundo real como
+es la predicción del precio de un coche usado, o en este caso la
+clasificación en categorías por precio. Probamos varias técnicas de
+preprocesado y varias configuraciones de distintos modelos que hemos
+estudiado en la asignatura. Realizamos diversos experimentos e
+intentamos ir mejorando nuestro score sobre test hasta conseguir el
+nuestro mejor resultado posible. Se trata claramente de un problema de
+aprendizaje supervisado (clasificación), y aplicaremos las técnicas y
+modelos propios de este tipo de tarea.
 
 \section{Preprocesados}
 
@@ -314,12 +320,263 @@ en los datos).
 
 \section{Estimación de hiperparámetros}
 
+Para ajustar los hiperparámetros de los modelos, recurrimos a la
+función
+\href{https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html}{\texttt{GridSearchCV}},
+que realiza validación cruzada (usamos 3, 4 o 5 folds, según lo rápido
+que se ejecuten los modelos) para cada combinación en una cuadrícula
+de valores para los hiperparámetros. Por ejemplo, el siguiente código
+realiza la búsqueda para los hiperparámetros de KNN.
+\begin{lstlisting}
+param_grid={'n_neighbors':[1,2,3,5,7],'weights':['uniform','distance'],
+            'metric':['euclidean','manhattan']}
+searcher = GridSearchCV(model, param_grid, n_jobs=4,verbose=15,cv=4)
+search = searcher.fit(train,label)
+\end{lstlisting}
+En este caso, prueba $5\cdot 2\cdot 2=20$ combinaciones, y realiza 4
+fits y validaciones para cada una. Podemos obtener los resultados como
+un DataFrame y ordenarlos por score medio.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=140mm]{imgs/tune-knn}
+  \caption{Score medio en CV para distintas configuraciones de KNN.}
+  \label{fig:tune-knn}
+\end{figure}
+
+En ocasiones hemos realizado este proceso varias veces, detallando la
+cuadrícula o ampliando el rango de valores de los parámetros cuyos
+óptimos se encontraban en los extremos del rango.
+
 \subsection{Sobreajuste con oversampling y validación
   cruzada} \label{val-sobreajuste}
+
+Durante el desarrollo de la práctica, me he percatado de un problema
+que provocaba sobreajuste en los modelos. Cuando generamos datos
+sintéticos con \texttt{SMOTE} para el oversampling, obtenemos datos
+muy similares a los datos originales. Por tanto, en el conjunto de
+datos de entrenamiento hay instancias muy similares entre sí. Cuando
+hacemos validación cruzada los algoritmos no entrenan con los mismos
+datos con los que validan, pero si con datos muy similares, lo que los
+lleva a sobreajustar. Esto provoca que las combinaciones de
+hiperparámetros que obtienen mejores scores a la hora de validar sean
+las que presentan bajo sesgo y alta varianza, por lo que no tienen que
+tener un desempeño mejor sobre el conjunto de test. Según la teoría de
+aprendizaje, la validación cruzada debería obtener una estimación
+pesimista de la capacidad de generalización real del modelo. Con
+scores de validación por encima de 0.9 y scores en test que apenas
+alcanzan los 0.8, podemos sospechar que este problema está provocando
+sobreajuste en los modelos y minando su desempeño sobre test en una
+medida bastante significativa.
+
+Para arreglar esto, separamos un conjunto de validación antes de hacer
+oversampling, y evaluamos cada configuación de cada algoritmo sobre
+este conjunto, de modo que los datos de validación no son tan
+similares a los de entrenamiento y obtenemos validaciones más
+realistas (rondando 0.8-0.84 de accuracy) y modelos con menos
+varianza. Las configuraciones de los modelos cambian en gran
+medida. GradientBoosting, que era mi mejor intento en ese momento, no
+consigue superar su desempeño sobre test (los intentos 8 y 16 utilizan
+árboles sin límite de profundidad, con este nuevo conjunto de
+validación ajustamos los parámetros para el intento 21, que utiliza
+árboles con profuncidad 2, pero obtiene peor score en test). En
+cambio, los modelos SVM y MLP encuentran configuraciones con mayor
+sesgo y menor varianza que logran superar a las anteriores
+configuraciones. En el caso de SVM, pasamos de $C=65$ (intento 6) a
+$C=40$ (intento 27), a menor $C$, mayor regularización, y conseguimos
+una ligera mejora sobre el conjunto de test. Para MLP, obtenemos una
+configuración más simple en la estructura de la red, de capas ocultas
+con (200,200) en el intento 4 a (100) en el intento 26, además de la
+incorporación de Early Stopping para regularizar, se consigue una
+mejora bastante significativa sobre el conjunto de test. Introducimos
+este último modelo en el Stacking correspondiente a nuestro mejor
+intento (el 32).
 
 \pagebreak
 
 \section{Modelos}
+
+Durante el desarrollo de la práctica probamos una amplia gama de
+modelos de los que hemos estudiado en la asignatura.
+
+\subsection{Random Forest}
+
+Se trata de un modelo bastante robusto y adecuado para clasificación
+multietiqueta. Trabaja relativamente bien con variables categóricos, y
+no requiere que las variables presenten escalas similares, por lo que
+no necesita un preprocesamiento tan complejo como otros modelos. Es
+por ello que es el primer modelo que probamos para tener una idea de
+los resultados que caben esperar. Se ve bastante beneficiado por el
+balanceo de las clases (oversampling), y curiosamente también por la
+binarización de características nominales (a pesar de trabajar bien
+con categóricas) en el intento 7. No le hemos dedicado mucho más
+trabajo a este modelo y no obtenemos buenos resultados con el ajuste
+de hiperparámetros, probablemente por el sobreajuste que hemos
+comentado antes. Los hiperparámetros que ajustamos son el número de
+estimadores y la profundidad máxima de los mismos.
+
+Para el resto de modelos, mantendremos la binarización de
+características nominales y la estandarización de los datos, ya que
+modelos como KNN, MLP y SVM requieren de estos preprocesados para
+funcionar correctamente.
+
+\subsection{MLP}
+
+Los parámetros que ajustamos son la estructura de capas de neuronas
+ocultas y el uso de Early Stopping para regularizar.
+
+Obtiene resultados relativamente buenos en el intento 4 (los mejores
+hasta el momento), sin Early Stopping y con una estructura compleja,
+(200,200). Mejora mucho en el intento 26, cuando ajustamos parámetros
+con el conjunto de validación y concluimos que es conveniente usar una estructura más simple, (100), y regularizar con Early Stopping.
+
+\subsection{SVM}
+
+Los parámetros que ajustamos son la regulariación $C$ y el kernel
+usado. Rápidamente nos percatamos de que el kernel más efectivo es el
+de Funciones de Base Radial (RBF), y tras varias búsquedas en grid,
+elegimos el valor 65 para $C$.
+
+\begin{figure}[H]
+  \centering
+  \subfigure[En la primera búsqueda nos decantamos por el núcleo RBF.]{
+    \includegraphics[width=55mm]{imgs/tune-svm1}
+  }
+  \subfigure[Los valores altos de $C$ consiguen mejor score en CV.]{
+    \includegraphics[width=50mm]{imgs/tune-svm2}
+  }
+  \subfigure[Acabamos eligiendo $C=65$.]{
+    \includegraphics[width=50mm]{imgs/tune-svm3}
+  }
+  \caption{Búsquedas en cuadrícula de la configuración de SVM con CV.}
+  \label{fig:tune-svm}
+\end{figure}
+
+Esta configuración consigueen el intento 6 nuestra mejor puntuación
+hasta el momento. Pero tras descubrir que la validación cruzada es
+propensa a sobreajustar, realizamos una segunda búsqueda para el
+parámetro $C$ y elegimos $C=40$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=50mm]{imgs/val-svm}
+  \caption{Búsqueda en cuadrícula de la configuración de SVM con el conjunto de validación.}
+  \label{fig:val-svm}
+\end{figure}
+
+Con esta configuración, consigue mejorar su score en el intento 27,
+pero queda lejos de otros modelos como GradientBoosting.
+
+\subsection{KNN}
+
+Sólo hemos probado un intento con este modelo, el 5, y los resultados
+han sido bastante malos tanto en CV como en test. Los parámetros que
+hemos ajustado son la métrica (euclídea, Manhattan o máximo), el
+número de vecinos y los pesos (uniformes o inversamente proporcionales
+a la distancia). En la Figura \ref{fig:tune-knn} vemos la última
+búsqueda en cuadrícula para este modelo y la configuración definitiva
+con la que realizamos el intento.
+
+\subsection{Boosting}
+
+Boosting ha sido la técnica más efectiva entre las que he probado. Es
+por ello que probamos diferentes variantes e implementaciones. Al
+contrario que en el resto de modelos, algunas de las implementaciones
+(\href{https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html}{Lightgbm}
+y
+\href{https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier}{XGBoost})
+no son de \textit{sklearn}.
+
+El primer algoritmo que intentamos es GradientBoosting, ajustamos el
+learning rate (obtenemos 0.1) y el número de estimadores (obtenemos
+500) y superamos en el intento 8 el mejor score que habíamos obtenido
+hasta el momento. El éxito de este modelo nos lleva a considerar otras
+implementaciones de esta técnica.
+
+Configuramos varios parámetros (número de estimadores, learning rate y
+profundidad máxima de los estimadores) de AdaBoost (que utiliza una
+función de perdida exponencial) para el intento 10, pero conseguimos
+resultados bastante peores, quizá debido al sobreajuste.
+
+Probamos una configuración más compleja de GradientBoosting para el
+intento 13, añadiendo a la cuadrícula los parámetos subsample
+(proporción de la muestra con la que entrena cada estimador simple) y
+profundidad máxima de los estimadores simples. Pero empeoramos los
+resultados sobre test. Igual ocurre en el intento 21, donde utilizamos
+el conjunto de validación para ajustar los parámetos.
+
+También probamos diversas configuraciones de LightGBM, una variante de
+GradientBoost mucho más rápida, usamos validación cruzada (intentos 23
+y 24) y validación simple (intento 22) para ajustar los
+parámetos. Pero no conseguimos que este modelo iguale el desempeño de
+GradientBoosting. También probamos la implementación de
+\textit{sklearn} de esta técnica, HistGradBoost, con configuraciones
+obtenidas por ambos sistemas de validación (intentos 29, valicación; y
+30, CV). Igualmente, este modelo se queda por debajo. Ajustamos el
+learning rate y el número de estimadores, así como la profundidad
+máxima y el número máximo de nodos hoja de los mismos.
+
+Finalmente, configurando XGBoost con el conjunto de validación,
+obtenemos un resultado a la altura de GradientBoosting (intento 28).
+
+\begin{figure}[H]
+  \centering
+  \subfigure[Configuración de HistGradientBoosting para el intento 29.]{
+    \includegraphics[width=45mm]{imgs/val-hist}
+  }
+  \subfigure[Configuración de LightGBM para el intento 22.]{
+    \includegraphics[width=55mm]{imgs/tune-lgbm22}
+  }
+  
+  \subfigure[Configuración de LightGBM para el intento 23.]{
+    \includegraphics[width=140mm]{imgs/tune-lgbm23}
+  }
+  \caption{Búsquedas en cuadrícula para configurar distintos algoritmos de boosting.}
+  \label{fig:tune-svm}
+\end{figure}
+
+\subsection{Stacking}
+
+Stacking es una técnica que combina distintos clasificadores para
+mejorar el desempeño que tienen por separado, necesitamos varios
+clasificadores que ya presenten un desempeño decente. Stacking se ve
+mejorada cuanto mayor sea el número de clasificadores, su calidad y su
+variedad. Por lo que tenemos que encontrar un compromiso entre
+cantidad, calidad y variedad de los estimadores para sacarle el máximo
+partido.
+
+Este modelo entrena los estimadores que apila a la vez que un
+estimador final (Regresión Logística) sobre los resultados, y utiliza
+validación cruzada para evaluar a qué estimadores debe de darles más
+peso. Su ejecución es muy lenta, por lo que en algunos experimentos
+omitimos la validación cruzada.
+
+Nuestro primer intento de stacking es el 9, que combina el Random
+Forest por defecto, el MLP con la configuración del intento 4, el SVM
+con la configuración del intento 6 y el GradientBoosting del intento
+8. No consigue superar al GradientBoosting, por lo que alguno o varios
+del resto de estimadores está minando su eficacia.
+
+Probamos en el intento 16 distintos (cuatro) GradientBoosting con
+número de estimadores y learning rates diferentes, y fijamos nuestro
+récord personal. En el siguiente intento permitimos
+(\texttt{passthrough=True}) que el clasificador final también aprenda
+sobre la muestra además de sobre los resultados, pero empeoreamos
+ligeramente el desempeño.
+
+En los intentos 19 y 20 añadimos algunos HistGradientBoosting con
+diferentes configuracioens, pero también empeoramos el desempeño.
+
+Finalmente en el intento 31, ya tenemos una batería más amplia y
+variada de modelos con calidad decente. Probamos Stacking con tres
+algoritmos basados en Boosting (GradientBoosting del intento 8,
+XGBoost del 28 y HistGradientBoosting del 29) y el nuevo MLP (intento
+26). Conseguimos mejorar la mejor puntuación hasta el momento.
+
+Eliminando el que peor desempeño tenía, HistGradientBoosting,
+conseguimos en el intento 32 nuestra puntuación definitiva. Finalmente,
+comprobamos en el intento 33 que eliminar el segundo con peor
+desempeño (MLP) empeora los resultados.
 
 \pagebreak
 

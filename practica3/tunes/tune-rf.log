@@ -1,0 +1,15 @@
+RF
+
+param_grid={'n_estimators': [50,75,100,125,150,175,200,225,250], 'max_depth': [2,4,6,8,10,12]}
+
+1.2min
+Mejores parámetros: {'max_depth': 12, 'n_estimators': 250}
+Mejor puntuación: 0.88
+
+————————————————————————
+
+param_grid={'n_estimators': [200,225,250,275,300], 'max_depth': [12,16,20,24]}
+
+59.9s
+Mejores parámetros: {'max_depth': 20, 'n_estimators': 300}
+Mejor puntuación: 0.9025753424657534
