@@ -634,10 +634,94 @@ descuento medio de las instancias que fallamos por exceso o
 defecto. Por tanto, no parece que altos descuentos lleven a mayor
 error en las predicciones.
 
+\pagebreak
+
 \subsection{Naive-Bayes}
+
+El modelo Naive-Bayes requiere un preprocesado algo distinto, ya que
+asume independencia en las variables y la binarización de variables
+categóricas impide esta propiedad. Intentamos combinar el preprocesado
+2 con PCA para quedarnos con menos variables y además
+incorreladas. Probando distintos valores para la proporción de
+variabilidad explicada, no logramos pasar de accuracy 0.6 en
+validación cruzada, por lo que no aplicamos este modelo a ningún
+intento.
 
 \subsection{Clustering}
 
+La validación (y validación cruzada) acostumbra a obtener una
+estimación pesimista del desempeño de los modelos, debido a que
+entrenan con menos datos. Claramente, en este caso no la tenemos. En
+el caso de validación cruzada es lógico pensar que el problema es el
+que comentamos en la Sección \ref{val-sobreajuste} con el
+oversampling, pero en validación simple no se da este problema, así
+que podría ocurrir que existiese cierto sesgo entre los datos de test
+y de entrenamiento, normalmente este problema limita nuestras
+posibilidades y no tiene solución.
+
+En un intento, quizá desesperado, de atajar este problema. Probamos
+técnicas de aprendizaje no supervisado. Utilizamos un preprocesado
+como el 3 (binarización de características nominales y reescalado de
+las variables) pero sin balanceo de clases. Mezclamos los datos de
+train y test, y aplicamos K-means y Ward con $K=5$ con la esperanza de
+que el tamaño de los clusters concuerde con las instancias de train
+que deberían pertenecer a esos clusters (para que sea factible que se
+hubiese formado un cluster por clase), pero no logramos nada.
+
+\begin{figure}[H]
+  \centering 
+  \includegraphics[width=110mm]{imgs/cluster1}
+  \caption{Tamaño de los clusters comparado con el número de
+    instancias de train en cada clase.}
+  \label{fig:cluster1}
+\end{figure} \vspace{-3mm}
+
+Como observamos, los clusters 4 de las segmentaciones no puede
+contener a ninguna clase.
+
+Probamos a introducir cinco nuevas dimensiones, a los datos de test
+les ponemos el 0 en todas, mientras que a los datos de entrenamiento
+les asignamos un valor $r>0$ en una (relativa a su clase) lo
+suficientemente grande para forzar que los datos de la misma clase
+acaben en el mismo cluster. Los datos de test no tendrían
+predisposición a formar parte de ningún cluster respecto a estas cinco
+dimensiones. Por tanto, quizá las instancias de test se vean
+``arrastradas'' al cluster correspondiente a su clase según sus
+valores en el resto de variables (las originales). 
+
+\begin{figure}[H]
+  \centering 
+  \includegraphics[width=110mm]{imgs/cluster2}
+  \caption{Tamaño de los clusters comparado con el número de
+    instancias de train en cada clase, forzando a que cada clase esté contenida en un cluster.}
+  \label{fig:cluster2}
+\end{figure} \vspace{-3mm}
+
+Como observamos, las instancias de test se ven arrastradas todas al
+mismo cluster, el cluster 1 de K-means y el 0 de Ward. Luego no hemos
+obtenido ninguna información.
+
 \section{Webgrafía}
 
+Algoritmos de \textit{sklearn}:
+\begin{itemize}
+
+\item Random Forest: \href{https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html}{https://scikit-learn.org/stable/modules/generated\\/sklearn.ensemble.RandomForestClassifier.html}
+\item SVM: \href{https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html}{https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html}
+\item Gaussian Naive-Bayes: \href{https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html}{https://scikit-learn.org/stable/modules/generated\\/sklearn.naive\_bayes.GaussianNB.html}
+\item KNN \href{https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html}{https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html}
+\item MLP: \href{https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html}{https://scikit-learn.org/stable/modules/generated/sklearn.neural\_network.MLPClassifier.html}
+\item GradientBoosting: \href{https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html}{https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html}
+\item HistGradientBoosting: \href{https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html}{https://scikit-learn.org/stable/modules/generated\\/sklearn.ensemble.HistGradientBoostingClassifier.html}
+\item Stacking: \href{https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html}{https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html}
+\item K-means: \href{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html}{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html}
+\item Clustering aglomerativo (Ward):
+  \href{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html}{https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html}
+\end{itemize}
+
+Otros algoritmos:
+\begin{itemize}
+\item LightGBM: \href{https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html}{https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html}
+\item XGBoost: \href{https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier}{https://xgboost.readthedocs.io/en/latest/python/python\_api.html\#xgboost.XGBClassifier}
+\end{itemize}
 \end{document}
